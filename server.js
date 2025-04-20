@@ -273,17 +273,46 @@ app.delete('/api/images/:id', (req, res) => {
   }
 });
 
+// IMPORTANT: Place API routes BEFORE the catch-all route
+// Make sure all API routes are defined before this section
+
+// Debug middleware for all API routes
+app.use('/api/*', (req, res, next) => {
+  console.log(`API REQUEST: ${req.method} ${req.originalUrl}`);
+  console.log('Headers:', req.headers);
+  
+  // Make sure this is correctly identified as an API route
+  res.set('X-API-Route', 'true');
+  
+  // Add a specific header to API responses
+  res.set('X-API-Server', 'picture-frame');
+  
+  next();
+});
+
 // Serve the React app for any other routes when build folder exists
 if (isProduction || hasBuildFolder) {
-  // This catch-all route should come last, after all other API routes
+  // Add a fallback for API routes that aren't handled
+  app.all('/api/*', (req, res, next) => {
+    // Only proceed to this fallback if no previous route handled it
+    console.log(`WARNING: Unhandled API route: ${req.method} ${req.originalUrl}`);
+    res.status(404).json({ 
+      error: 'API endpoint not found',
+      path: req.originalUrl,
+      method: req.method
+    });
+  });
+
+  // This catch-all route should come last, after all other routes
   app.get('*', (req, res, next) => {
-    // Skip API routes - they are handled separately
-    if (req.path.startsWith('/api/')) {
-      return next();
-    }
-    
     // Log the request for debugging
     console.log(`Catch-all route handling: ${req.path}`);
+    
+    // Skip API routes completely - they should have been handled above
+    if (req.path.startsWith('/api/')) {
+      console.warn(`API route reached catch-all handler: ${req.path}`);
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
     
     // First try to serve the exact file if it exists in the build directory
     const filePath = path.join(__dirname, 'build', req.path);

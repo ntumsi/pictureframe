@@ -1,8 +1,22 @@
 import axios from 'axios';
 
-// In production, use relative URL paths instead of hardcoded localhost
-const API_URL = process.env.REACT_APP_API_URL || 
-  (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5000/api');
+// In production, use absolute URL with current origin
+const getApiUrl = () => {
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  
+  if (process.env.NODE_ENV === 'production') {
+    // Use the current origin (host) with the /api path
+    const currentOrigin = window.location.origin;
+    console.log('Using current origin for API:', currentOrigin);
+    return `${currentOrigin}/api`;
+  }
+  
+  return 'http://localhost:5000/api';
+};
+
+const API_URL = getApiUrl();
 
 export const getAllImages = async () => {
   try {
