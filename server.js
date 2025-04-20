@@ -50,7 +50,29 @@ app.use(cors({
   methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json());
+
+// Configure JSON parsing with error handling
+app.use(express.json({
+  verify: (req, res, buf, encoding) => {
+    try {
+      JSON.parse(buf);
+    } catch (e) {
+      console.error('Invalid JSON received:', e);
+      res.status(400).json({ error: 'Invalid JSON' });
+      throw new Error('Invalid JSON');
+    }
+  }
+}));
+
+// Ensure all JSON responses have the correct Content-Type header
+app.use((req, res, next) => {
+  const originalJson = res.json;
+  res.json = function(body) {
+    res.setHeader('Content-Type', 'application/json');
+    return originalJson.call(this, body);
+  };
+  next();
+});
 
 // Always serve the uploads folder
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
@@ -150,6 +172,7 @@ app.get('/api/images', (req, res) => {
       });
       
       console.log(`Returning ${images.length} images:`, images);
+      res.setHeader('Content-Type', 'application/json');
       res.json(images);
     });
   } catch (error) {
@@ -202,6 +225,7 @@ app.post('/api/upload', (req, res) => {
       console.log('Full file path:', fullPath);
       console.log('File exists:', fs.existsSync(fullPath));
       
+      res.setHeader('Content-Type', 'application/json');
       res.json(fileDetails);
     });
   } catch (error) {

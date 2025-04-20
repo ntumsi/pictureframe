@@ -8,8 +8,22 @@ export const getAllImages = async () => {
   try {
     console.log('Fetching images from:', `${API_URL}/images`);
     const response = await axios.get(`${API_URL}/images`);
+    
+    // Safe parse if needed (in case response.data is a string)
+    let parsedData;
+    if (typeof response.data === 'string') {
+      try {
+        parsedData = JSON.parse(response.data);
+      } catch (e) {
+        console.error('Failed to parse response data:', e);
+        parsedData = [];
+      }
+    } else {
+      parsedData = response.data;
+    }
+    
     // Ensure we always return an array
-    const images = Array.isArray(response.data) ? response.data : [];
+    const images = Array.isArray(parsedData) ? parsedData : [];
     console.log('Received images:', images.length, images);
     return images;
   } catch (error) {
@@ -33,8 +47,21 @@ export const uploadImage = async (file) => {
       }
     });
     
-    console.log('Upload response:', response.data);
-    return response.data;
+    // Safe parse if needed
+    let parsedData;
+    if (typeof response.data === 'string') {
+      try {
+        parsedData = JSON.parse(response.data);
+      } catch (e) {
+        console.error('Failed to parse upload response data:', e);
+        parsedData = { error: 'Failed to parse response' };
+      }
+    } else {
+      parsedData = response.data;
+    }
+    
+    console.log('Upload response:', parsedData);
+    return parsedData;
   } catch (error) {
     console.error('Error uploading image:', error);
     throw error;
@@ -43,10 +70,26 @@ export const uploadImage = async (file) => {
 
 export const deleteImage = async (imageId) => {
   try {
+    console.log('Deleting image:', imageId);
     const response = await axios.delete(`${API_URL}/images/${imageId}`);
-    return response.data;
+    
+    // Safe parse if needed
+    let parsedData;
+    if (typeof response.data === 'string') {
+      try {
+        parsedData = JSON.parse(response.data);
+      } catch (e) {
+        console.error('Failed to parse delete response data:', e);
+        parsedData = { success: false, error: 'Failed to parse response' };
+      }
+    } else {
+      parsedData = response.data;
+    }
+    
+    console.log('Delete response:', parsedData);
+    return parsedData;
   } catch (error) {
     console.error('Error deleting image:', error);
-    throw error;
+    return { success: false, error: error.message };
   }
 };
