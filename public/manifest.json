@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "PicFrame",
+  "name": "Picture Frame - Digital Photo Display",
   "icons": [
     {
       "src": "favicon.ico",

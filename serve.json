@@ -1,0 +1,30 @@
+{
+  "public": "build",
+  "rewrites": [
+    { "source": "manifest.json", "destination": "/manifest.json" },
+    { "source": "favicon.ico", "destination": "/favicon.ico" },
+    { "source": "logo192.png", "destination": "/logo192.png" },
+    { "source": "logo512.png", "destination": "/logo512.png" },
+    { "source": "**", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "**/*.@(jpg|jpeg|gif|png|ico|webp)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "max-age=7200"
+        }
+      ]
+    },
+    {
+      "source": "**/*.@(js|css)",
+      "headers": [
+        {
+          "key": "Cache-Control", 
+          "value": "max-age=3600"
+        }
+      ]
+    }
+  ]
+}

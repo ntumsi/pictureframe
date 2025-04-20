@@ -12,7 +12,7 @@ fi
 if [ "$1" == "serve" ]; then
   # Use serve for static file serving (better for Raspberry Pi)
   echo "Starting app with serve..."
-  npx serve -s build
+  npx serve -s build --config serve.json
 else
   # Use Express server (original method)
   echo "Starting app with Express server..."

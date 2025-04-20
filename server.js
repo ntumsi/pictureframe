@@ -53,6 +53,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 // For production, serve the React build files
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'build')));
+  
+  // Explicitly serve favicon and manifest to avoid 404 errors
+  app.get('/favicon.ico', (req, res) => {
+    res.sendFile(path.join(__dirname, 'build', 'favicon.ico'));
+  });
+  
+  app.get('/manifest.json', (req, res) => {
+    res.sendFile(path.join(__dirname, 'build', 'manifest.json'));
+  });
 }
 
 // Get all images

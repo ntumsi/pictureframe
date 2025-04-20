@@ -30,7 +30,7 @@
     "eject": "react-scripts eject",
     "server": "node server.js",
     "dev": "concurrently \"npm run server\" \"npm run start\"",
-    "serve": "serve -s build",
+    "serve": "serve -s build --config serve.json",
     "production": "npm run build && npm run serve"
   },
   "eslintConfig": {
