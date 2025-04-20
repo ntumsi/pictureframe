@@ -7,10 +7,12 @@ const API_URL = process.env.REACT_APP_API_URL ||
 export const getAllImages = async () => {
   try {
     const response = await axios.get(`${API_URL}/images`);
-    return response.data;
+    // Ensure we always return an array
+    return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     console.error('Error fetching images:', error);
-    throw error;
+    // Return empty array instead of throwing to prevent crashes
+    return [];
   }
 };
 

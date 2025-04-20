@@ -80,54 +80,120 @@ if (process.env.NODE_ENV === 'production') {
 
 // Get all images
 app.get('/api/images', (req, res) => {
-  fs.readdir(UPLOADS_FOLDER, (err, files) => {
-    if (err) {
-      return res.status(500).json({ error: 'Failed to retrieve images' });
+  // Log request for debugging
+  console.log('API request received: GET /api/images');
+  
+  try {
+    // Check if directory exists
+    if (!fs.existsSync(UPLOADS_FOLDER)) {
+      console.log(`Creating uploads folder: ${UPLOADS_FOLDER}`);
+      fs.mkdirSync(UPLOADS_FOLDER, { recursive: true });
+      return res.json([]);
     }
     
-    const images = files
-      .filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
-      .map(file => ({
-        id: path.parse(file).name,
-        name: file,
-        path: `/uploads/${file}`,
-        url: `/uploads/${file}`
-      }));
-    
-    res.json(images);
-  });
+    fs.readdir(UPLOADS_FOLDER, (err, files) => {
+      if (err) {
+        console.error('Error reading uploads folder:', err);
+        return res.json([]); // Return empty array instead of error for better client resilience
+      }
+      
+      // Ensure files is an array
+      if (!Array.isArray(files)) {
+        console.warn('files is not an array:', files);
+        return res.json([]);
+      }
+      
+      const images = files
+        .filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
+        .map(file => ({
+          id: path.parse(file).name,
+          name: file,
+          path: `/uploads/${file}`,
+          url: `/uploads/${file}`
+        }));
+      
+      console.log(`Returning ${images.length} images`);
+      res.json(images);
+    });
+  } catch (error) {
+    console.error('Unexpected error in /api/images:', error);
+    res.json([]); // Return empty array instead of error
+  }
 });
 
 // Upload image
-app.post('/api/upload', upload.single('image'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No image uploaded' });
-  }
+app.post('/api/upload', (req, res) => {
+  console.log('API request received: POST /api/upload');
   
-  res.json({
-    id: path.parse(req.file.filename).name,
-    name: req.file.filename,
-    path: `/uploads/${req.file.filename}`,
-    url: `/uploads/${req.file.filename}`
-  });
+  try {
+    // Ensure uploads folder exists
+    if (!fs.existsSync(UPLOADS_FOLDER)) {
+      console.log(`Creating uploads folder: ${UPLOADS_FOLDER}`);
+      fs.mkdirSync(UPLOADS_FOLDER, { recursive: true });
+    }
+    
+    // Use multer middleware with error handling
+    upload.single('image')(req, res, (err) => {
+      if (err) {
+        console.error('Error uploading file:', err);
+        return res.status(400).json({ error: err.message });
+      }
+      
+      if (!req.file) {
+        console.warn('No file in upload request');
+        return res.status(400).json({ error: 'No image uploaded' });
+      }
+      
+      console.log(`File uploaded successfully: ${req.file.filename}`);
+      res.json({
+        id: path.parse(req.file.filename).name,
+        name: req.file.filename,
+        path: `/uploads/${req.file.filename}`,
+        url: `/uploads/${req.file.filename}`
+      });
+    });
+  } catch (error) {
+    console.error('Unexpected error in /api/upload:', error);
+    res.status(500).json({ error: 'Server error during upload' });
+  }
 });
 
 // Delete image
 app.delete('/api/images/:id', (req, res) => {
-  const files = fs.readdirSync(UPLOADS_FOLDER);
-  const file = files.find(file => file.startsWith(req.params.id));
-  
-  if (!file) {
-    return res.status(404).json({ error: 'Image not found' });
-  }
-  
-  const filePath = path.join(UPLOADS_FOLDER, file);
+  console.log(`API request received: DELETE /api/images/${req.params.id}`);
   
   try {
-    fs.unlinkSync(filePath);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to delete image' });
+    if (!fs.existsSync(UPLOADS_FOLDER)) {
+      console.warn('Uploads folder not found');
+      return res.json({ success: false, error: 'No images directory' });
+    }
+    
+    const files = fs.readdirSync(UPLOADS_FOLDER);
+    if (!Array.isArray(files)) {
+      console.warn('Files is not an array:', files);
+      return res.json({ success: false, error: 'Directory read failed' });
+    }
+    
+    const file = files.find(file => file.startsWith(req.params.id));
+    
+    if (!file) {
+      console.warn(`Image with ID ${req.params.id} not found`);
+      return res.json({ success: false, error: 'Image not found' });
+    }
+    
+    const filePath = path.join(UPLOADS_FOLDER, file);
+    
+    try {
+      fs.unlinkSync(filePath);
+      console.log(`Deleted image: ${file}`);
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Error deleting file:', err);
+      res.json({ success: false, error: 'Failed to delete image' });
+    }
+  } catch (error) {
+    console.error('Unexpected error in /api/images/:id DELETE:', error);
+    res.json({ success: false, error: 'Server error' });
   }
 });
 
