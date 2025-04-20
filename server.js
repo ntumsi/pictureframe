@@ -41,6 +41,9 @@ const upload = multer({
   }
 });
 
+// Log the NODE_ENV for debugging
+console.log(`Server starting in ${process.env.NODE_ENV || 'development'} mode`);
+
 // Configure CORS to allow requests from other devices on the network
 app.use(cors({
   origin: '*',
@@ -48,20 +51,26 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
-// Serve uploads folder explicitly - make sure it's accessible in both dev and prod
+// Always serve the uploads folder
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
-// In production, handle the case where React tries to access uploads from the build directory
-if (process.env.NODE_ENV === 'production') {
-  app.use('/build/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
-}
+// Always serve some common static files from public folder
+app.use(express.static(path.join(__dirname, 'public')));
 
-// For production, serve the React build files
-if (process.env.NODE_ENV === 'production') {
+// Setup for production mode
+const isProduction = process.env.NODE_ENV === 'production';
+const hasBuildFolder = fs.existsSync(path.join(__dirname, 'build'));
+
+// If we're in production mode OR the build folder exists, serve files from build
+if (isProduction || hasBuildFolder) {
+  console.log('Serving static files from build folder');
+  
   // Serve static files from the React build folder
   app.use(express.static(path.join(__dirname, 'build')));
+  
+  // Always ensure uploads are accessible from both locations
+  app.use('/build/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
   
   // Handle common static files that might get 404 errors
   const staticFiles = [
@@ -73,7 +82,17 @@ if (process.env.NODE_ENV === 'production') {
   
   staticFiles.forEach(file => {
     app.get(`/${file}`, (req, res) => {
-      res.sendFile(path.join(__dirname, 'build', file));
+      const filePath = path.join(__dirname, 'build', file);
+      if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+      } else {
+        const publicPath = path.join(__dirname, 'public', file);
+        if (fs.existsSync(publicPath)) {
+          res.sendFile(publicPath);
+        } else {
+          res.status(404).send('File not found');
+        }
+      }
     });
   });
 }
@@ -197,8 +216,8 @@ app.delete('/api/images/:id', (req, res) => {
   }
 });
 
-// For production, serve the React app for any other routes
-if (process.env.NODE_ENV === 'production') {
+// Serve the React app for any other routes when build folder exists
+if (isProduction || hasBuildFolder) {
   // This catch-all route should come last, after all other API routes
   app.get('*', (req, res, next) => {
     // Skip API routes - they are handled separately
@@ -206,14 +225,30 @@ if (process.env.NODE_ENV === 'production') {
       return next();
     }
     
+    // Log the request for debugging
+    console.log(`Catch-all route handling: ${req.path}`);
+    
     // First try to serve the exact file if it exists in the build directory
     const filePath = path.join(__dirname, 'build', req.path);
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      console.log(`Serving file: ${filePath}`);
       return res.sendFile(filePath);
     }
     
-    // Otherwise serve the index.html for client-side routing
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+    // Check if it's a known client-side route
+    if (['/manage', '/'].includes(req.path)) {
+      console.log(`Serving index.html for client-side route: ${req.path}`);
+      return res.sendFile(path.join(__dirname, 'build', 'index.html'));
+    }
+    
+    // For other routes, try to be helpful
+    console.log(`Resource not found: ${req.path}`);
+    if (req.accepts('html')) {
+      // Otherwise serve the index.html for client-side routing
+      res.sendFile(path.join(__dirname, 'build', 'index.html'));
+    } else {
+      res.status(404).send('Resource not found');
+    }
   });
 }
 

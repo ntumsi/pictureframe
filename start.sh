@@ -21,6 +21,19 @@ if [ ! -d "./build" ]; then
     # Create the symlink
     ln -sf ../public/uploads ./build/uploads
   fi
+else
+  echo "Using existing build folder"
+  
+  # Make sure the symlink exists for the build folder
+  if [ ! -L "./build/uploads" ]; then
+    echo "Setting up uploads folder symlink..."
+    # Remove the directory if it exists but is not a symlink
+    if [ -d "./build/uploads" ]; then
+      rm -rf ./build/uploads
+    fi
+    # Create the symlink
+    ln -sf ../public/uploads ./build/uploads
+  fi
 fi
 
 # Choose which method to use for serving the app
