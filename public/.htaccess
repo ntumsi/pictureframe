@@ -1,0 +1,20 @@
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.html$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-l
+RewriteRule . /index.html [L]
+
+<FilesMatch "^(manifest\.json|favicon\.ico|logo192\.png|logo512\.png)$">
+  Header set Cache-Control "max-age=86400"
+</FilesMatch>
+
+<Files "manifest.json">
+  Header set Content-Type "application/manifest+json"
+</Files>
+
+# Enable CORS
+Header add Access-Control-Allow-Origin "*"
+Header add Access-Control-Allow-Headers "origin, x-requested-with, content-type"
+Header add Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE"

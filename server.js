@@ -52,15 +52,21 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // For production, serve the React build files
 if (process.env.NODE_ENV === 'production') {
+  // Serve static files from the React build folder
   app.use(express.static(path.join(__dirname, 'build')));
   
-  // Explicitly serve favicon and manifest to avoid 404 errors
-  app.get('/favicon.ico', (req, res) => {
-    res.sendFile(path.join(__dirname, 'build', 'favicon.ico'));
-  });
+  // Handle common static files that might get 404 errors
+  const staticFiles = [
+    'favicon.ico', 
+    'manifest.json', 
+    'logo192.png', 
+    'logo512.png'
+  ];
   
-  app.get('/manifest.json', (req, res) => {
-    res.sendFile(path.join(__dirname, 'build', 'manifest.json'));
+  staticFiles.forEach(file => {
+    app.get(`/${file}`, (req, res) => {
+      res.sendFile(path.join(__dirname, 'build', file));
+    });
   });
 }
 
@@ -119,7 +125,20 @@ app.delete('/api/images/:id', (req, res) => {
 
 // For production, serve the React app for any other routes
 if (process.env.NODE_ENV === 'production') {
+  // This catch-all route should come last, after all other API routes
   app.get('*', (req, res) => {
+    // Skip API routes - they are handled separately
+    if (req.path.startsWith('/api/')) {
+      return;
+    }
+    
+    // First try to serve the exact file if it exists in the build directory
+    const filePath = path.join(__dirname, 'build', req.path);
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      return res.sendFile(filePath);
+    }
+    
+    // Otherwise serve the index.html for client-side routing
     res.sendFile(path.join(__dirname, 'build', 'index.html'));
   });
 }
