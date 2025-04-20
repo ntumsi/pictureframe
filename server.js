@@ -114,9 +114,10 @@ app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 // Always serve some common static files from public folder
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Setup for production mode
-const isProduction = process.env.NODE_ENV === 'production';
+// Always treat as production mode if build folder exists
 const hasBuildFolder = fs.existsSync(path.join(__dirname, 'build'));
+// Force production behavior for consistency
+const isProduction = true;
 
 // If we're in production mode OR the build folder exists, serve files from build
 if (isProduction || hasBuildFolder) {
