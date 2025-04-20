@@ -37,6 +37,8 @@ This application works great on Raspberry Pi devices to create a digital picture
 2. Raspberry Pi OS (32-bit or 64-bit) installed
 3. Display connected to the Raspberry Pi
 4. Internet connection (Wi-Fi or Ethernet)
+5. Node.js 18.0.0 or later
+6. npm 9.0.0 or later
 
 #### Setup Steps
 
@@ -48,7 +50,7 @@ sudo apt upgrade -y
 
 2. Install Node.js and npm:
 ```
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
 ```
 
