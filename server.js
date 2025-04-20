@@ -42,7 +42,7 @@ const upload = multer({
 });
 
 // Log the NODE_ENV for debugging
-console.log(`Server starting in ${process.env.NODE_ENV || 'development'} mode`);
+console.log(`Server starting in ${process.env.NODE_ENV || 'development'} mode with PID ${process.pid}`);
 
 // Configure CORS to allow requests from other devices on the network
 app.use(cors({
@@ -50,6 +50,13 @@ app.use(cors({
   methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Add server identification header
+app.use((req, res, next) => {
+  res.setHeader('X-Server', 'PictureFrame/1.0');
+  res.setHeader('X-Server-PID', process.pid);
+  next();
+});
 
 // Configure JSON parsing with error handling
 app.use(express.json({

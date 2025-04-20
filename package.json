@@ -32,7 +32,7 @@
     "server:dev": "node server.js",
     "dev": "concurrently \"npm run server:dev\" \"npm run start\"",
     "serve": "serve -s build --config ./serve.json",
-    "production": "npm run build && npm run serve"
+    "production": "npm run build && npm run server"
   },
   "eslintConfig": {
     "extends": [

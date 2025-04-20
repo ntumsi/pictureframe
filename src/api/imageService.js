@@ -20,13 +20,35 @@ const API_URL = getApiUrl();
 
 export const getAllImages = async () => {
   try {
-    console.log('Fetching images from:', `${API_URL}/images`);
-    const response = await axios.get(`${API_URL}/images`);
+    // Add timestamp to prevent caching
+    const timestamp = new Date().getTime();
+    const url = `${API_URL}/images?_=${timestamp}`;
+    console.log('Fetching images from:', url);
+    
+    // Add debug headers
+    const headers = {
+      'X-Client-Debug': 'true',
+      'X-Timestamp': timestamp.toString(),
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    };
+    
+    const response = await axios.get(url, { headers });
+    
+    // Log the raw response for debugging
+    console.log('Raw response headers:', response.headers);
+    console.log('Raw response type:', typeof response.data);
     
     // Safe parse if needed (in case response.data is a string)
     let parsedData;
     if (typeof response.data === 'string') {
       try {
+        // Check if it looks like HTML
+        if (response.data.trim().startsWith('<!')) {
+          console.error('Received HTML instead of JSON:', response.data.substring(0, 100));
+          return [];
+        }
+        
         parsedData = JSON.parse(response.data);
       } catch (e) {
         console.error('Failed to parse response data:', e);
@@ -42,6 +64,14 @@ export const getAllImages = async () => {
     return images;
   } catch (error) {
     console.error('Error fetching images:', error);
+    console.error('Error details:', error.response?.status, error.response?.statusText);
+    if (error.response?.data) {
+      console.error('Error response data:', 
+        typeof error.response.data === 'string' 
+          ? error.response.data.substring(0, 200) 
+          : error.response.data
+      );
+    }
     // Return empty array instead of throwing to prevent crashes
     return [];
   }
