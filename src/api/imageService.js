@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-// IMPORTANT: We're forcing the API_URL to ALWAYS use the backend server directly
-// This ensures we're always hitting the Express API server directly and not going through the static server
-// or getting confused by client-side routing
+// Get the API URL from environment or use a default
+// In development, we use http://localhost:5000/api
+// In production with relative URLs, we just use /api
 
-// Hardcode the API_URL to always use port 5000
-const API_URL = 'http://localhost:5000/api';
+// For the API URL, we'll use the environment variable or fall back to relative path
+const API_URL = process.env.REACT_APP_API_URL || '/api';
 
 // Configure axios defaults
 axios.defaults.withCredentials = true; // Enable cookies/credentials

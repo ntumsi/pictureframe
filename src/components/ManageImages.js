@@ -182,11 +182,11 @@ const ManageImages = () => {
                   onClick={() => toggleImageSelection(image.id)}
                 >
                   <img 
-                    src={`http://localhost:5000${image.url}`} 
+                    src={image.url} 
                     alt={image.name} 
                     onError={(e) => {
                       console.error('Error loading image in ManageImages:', e, image.url);
-                      console.log('Attempted URL:', `http://localhost:5000${image.url}`);
+                      console.log('Failed URL:', image.url);
                     }}
                   />
                   <div className="image-overlay">

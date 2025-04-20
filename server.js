@@ -108,26 +108,37 @@ app.use((req, res, next) => {
   next();
 });
 
-// Always serve the uploads folder
-app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+// Set up static file serving
+console.log('Setting up static file directories...');
 
-// Always serve some common static files from public folder
+// Make uploads directory the single source of truth for uploaded images
+const uploadsPath = path.join(__dirname, 'public', 'uploads');
+console.log(`Uploads directory: ${uploadsPath} (exists: ${fs.existsSync(uploadsPath)})`);
+
+// Serve uploads directory from all possible paths to ensure they're always accessible
+app.use('/uploads', express.static(uploadsPath));
+app.use('/public/uploads', express.static(uploadsPath));
+app.use('/build/uploads', express.static(uploadsPath));
+app.use('/api/uploads', express.static(uploadsPath));
+
+// Log static routes for debugging
+console.log('Image URLs will be accessible at:');
+console.log('- /uploads/[filename]');
+console.log('- /public/uploads/[filename]');
+console.log('- /build/uploads/[filename]');
+console.log('- /api/uploads/[filename]');
+
+// Serve static files from public and build folders
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Always treat as production mode if build folder exists
-const hasBuildFolder = fs.existsSync(path.join(__dirname, 'build'));
-// Force production behavior for consistency
-const isProduction = true;
+// Serve build directory if it exists
+const buildPath = path.join(__dirname, 'build');
+const hasBuildFolder = fs.existsSync(buildPath);
+const isProduction = true; // Force production behavior for consistency
 
-// If we're in production mode OR the build folder exists, serve files from build
-if (isProduction || hasBuildFolder) {
-  console.log('Serving static files from build folder');
-  
-  // Serve static files from the React build folder
-  app.use(express.static(path.join(__dirname, 'build')));
-  
-  // Always ensure uploads are accessible from both locations
-  app.use('/build/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+if (hasBuildFolder) {
+  console.log(`Serving static files from build folder: ${buildPath}`);
+  app.use(express.static(buildPath));
   
   // Handle common static files that might get 404 errors
   const staticFiles = [
