@@ -105,6 +105,8 @@ sudo nano /etc/systemd/system/pictureframe.service
 ```
 
 2. Add the following content (adjust paths as needed):
+
+**Option 1: Using Express Server**
 ```
 [Unit]
 Description=Picture Frame Application
@@ -115,6 +117,23 @@ Type=simple
 User=pi
 WorkingDirectory=/home/pi/pictureframe
 ExecStart=/usr/bin/bash /home/pi/pictureframe/start.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**Option 2: Using Serve (Recommended for Raspberry Pi)**
+```
+[Unit]
+Description=Picture Frame Application
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/pictureframe
+ExecStart=/usr/bin/bash /home/pi/pictureframe/start.sh serve
 Restart=on-failure
 
 [Install]
@@ -135,11 +154,21 @@ sudo nano /home/pi/.config/autostart/kiosk.desktop
 ```
 
 Add the following content:
+
+**For Express server (port 5000):**
 ```
 [Desktop Entry]
 Type=Application
 Name=Kiosk
 Exec=chromium-browser --noerrdialogs --disable-infobars --kiosk http://localhost:5000
+```
+
+**For Serve (port 3000, recommended):**
+```
+[Desktop Entry]
+Type=Application
+Name=Kiosk
+Exec=chromium-browser --noerrdialogs --disable-infobars --kiosk http://localhost:3000
 ```
 
 5. Disable screen blanking by editing the config file:
@@ -204,17 +233,31 @@ This will start:
 npm run build
 ```
 
-2. Start the server:
+2. Start the application using one of these methods:
+
+**Method 1: Using Express Server (supports API functionality)**
 ```
 npm run server
 ```
-
-Or use the provided start script:
-```
-./start.sh
-```
-
 The application will be accessible at http://localhost:5000.
+
+**Method 2: Using Serve (better for Raspberry Pi, static files only)**
+```
+npm run serve
+```
+The application will be accessible at http://localhost:3000 by default.
+
+**Method 3: All-in-one commands**
+```
+# Build and serve with express
+npm run production
+
+# Or use the start script with Express
+./start.sh
+
+# Or use the start script with Serve (recommended for Raspberry Pi)
+./start.sh serve
+```
 
 ## Accessing on Your Network
 

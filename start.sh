@@ -8,6 +8,14 @@ if [ ! -d "./build" ]; then
   npm run build
 fi
 
-# Set production mode and start the server
-export NODE_ENV=production
-node server.js
+# Choose which method to use for serving the app
+if [ "$1" == "serve" ]; then
+  # Use serve for static file serving (better for Raspberry Pi)
+  echo "Starting app with serve..."
+  npx serve -s build
+else
+  # Use Express server (original method)
+  echo "Starting app with Express server..."
+  export NODE_ENV=production
+  node server.js
+fi
