@@ -41,7 +41,7 @@ if [ "$1" == "serve" ]; then
   # Use serve for static file serving (better for Raspberry Pi)
   echo "Starting app with serve..."
   # Note: When using serve, API calls won't work - this is for slideshow viewing only
-  npx serve -s build --config serve.json
+  npx serve -s build --config ./serve.json
 else
   # Use Express server (original method)
   echo "Starting app with Express server..."
