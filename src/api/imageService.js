@@ -1,22 +1,15 @@
 import axios from 'axios';
 
-// In production, use absolute URL with current origin
-const getApiUrl = () => {
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
-  }
-  
-  if (process.env.NODE_ENV === 'production') {
-    // Use the current origin (host) with the /api path
-    const currentOrigin = window.location.origin;
-    console.log('Using current origin for API:', currentOrigin);
-    return `${currentOrigin}/api`;
-  }
-  
-  return 'http://localhost:5000/api';
-};
+// IMPORTANT: We're forcing the API_URL to ALWAYS use the backend server directly
+// This ensures we're always hitting the Express API server directly and not going through the static server
+// or getting confused by client-side routing
 
-const API_URL = getApiUrl();
+// Hardcode the API_URL to always use port 5000
+const API_URL = 'http://localhost:5000/api';
+
+console.log('API Service initialized with URL:', API_URL);
+console.log('Current location:', window.location.href);
+console.log('Environment:', process.env.NODE_ENV);
 
 export const getAllImages = async () => {
   try {

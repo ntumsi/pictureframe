@@ -38,5 +38,16 @@ fi
 
 # Always use the Express server (which handles both static files and API)
 echo "Starting app with Express server..."
+
+# Force API URL to localhost:5000 for reliability
+export REACT_APP_API_URL=http://localhost:5000/api
 export NODE_ENV=production
+
+# Print configuration for debugging
+echo "Configuration:"
+echo "  NODE_ENV: $NODE_ENV"
+echo "  REACT_APP_API_URL: $REACT_APP_API_URL"
+echo "  PORT: ${PORT:-5000}"
+
+# Start the server
 node server.js
