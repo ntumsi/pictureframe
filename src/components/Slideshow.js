@@ -133,7 +133,9 @@ const Slideshow = () => {
       <div className="slideshow">
         {images.length > 0 && (
           <img 
-            src={`${process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000'}${images[currentIndex].url}`} 
+            src={process.env.NODE_ENV === 'production' 
+              ? images[currentIndex].url 
+              : `${process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000'}${images[currentIndex].url}`} 
             alt={images[currentIndex].name} 
             className="slideshow-image"
           />

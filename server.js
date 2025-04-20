@@ -50,6 +50,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Serve uploads folder explicitly
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+
 // For production, serve the React build files
 if (process.env.NODE_ENV === 'production') {
   // Serve static files from the React build folder
@@ -126,10 +129,10 @@ app.delete('/api/images/:id', (req, res) => {
 // For production, serve the React app for any other routes
 if (process.env.NODE_ENV === 'production') {
   // This catch-all route should come last, after all other API routes
-  app.get('*', (req, res) => {
+  app.get('*', (req, res, next) => {
     // Skip API routes - they are handled separately
     if (req.path.startsWith('/api/')) {
-      return;
+      return next();
     }
     
     // First try to serve the exact file if it exists in the build directory
