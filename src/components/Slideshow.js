@@ -16,10 +16,18 @@ const Slideshow = () => {
     const fetchImages = async () => {
       try {
         setIsLoading(true);
+        console.log('Slideshow: Fetching images...');
         const fetchedImages = await getAllImages();
+        console.log('Slideshow: Images fetched:', fetchedImages);
+        
+        if (fetchedImages.length === 0) {
+          console.log('Slideshow: No images returned from API');
+        }
+        
         setImages(fetchedImages);
         setIsLoading(false);
       } catch (err) {
+        console.error('Slideshow: Error fetching images:', err);
         setError('Failed to load images');
         setIsLoading(false);
       }
@@ -128,15 +136,28 @@ const Slideshow = () => {
     );
   }
 
+  console.log('Slideshow rendering with images:', images.length);
+  if (images.length > 0) {
+    console.log('Current image:', currentIndex, images[currentIndex]);
+    console.log('Image URL:', images[currentIndex].url);
+  }
+  
   return (
     <div className="slideshow-container">
       <div className="slideshow">
         {images.length > 0 && (
-          <img 
-            src={images[currentIndex].url} 
-            alt={images[currentIndex].name} 
-            className="slideshow-image"
-          />
+          <>
+            <img 
+              src={images[currentIndex].url} 
+              alt={images[currentIndex].name} 
+              className="slideshow-image"
+              onLoad={() => console.log('Image loaded successfully')}
+              onError={(e) => console.error('Error loading image:', e, images[currentIndex].url)}
+            />
+            <div style={{ position: 'absolute', bottom: '50px', left: '10px', background: 'rgba(0,0,0,0.5)', color: 'white', padding: '5px', fontSize: '12px' }}>
+              Debug: {images[currentIndex].url}
+            </div>
+          </>
         )}
       </div>
       

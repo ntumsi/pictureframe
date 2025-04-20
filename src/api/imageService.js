@@ -6,9 +6,12 @@ const API_URL = process.env.REACT_APP_API_URL ||
 
 export const getAllImages = async () => {
   try {
+    console.log('Fetching images from:', `${API_URL}/images`);
     const response = await axios.get(`${API_URL}/images`);
     // Ensure we always return an array
-    return Array.isArray(response.data) ? response.data : [];
+    const images = Array.isArray(response.data) ? response.data : [];
+    console.log('Received images:', images.length, images);
+    return images;
   } catch (error) {
     console.error('Error fetching images:', error);
     // Return empty array instead of throwing to prevent crashes
@@ -18,6 +21,9 @@ export const getAllImages = async () => {
 
 export const uploadImage = async (file) => {
   try {
+    console.log('Uploading image to:', `${API_URL}/upload`);
+    console.log('File being uploaded:', file.name, file.type, file.size);
+    
     const formData = new FormData();
     formData.append('image', file);
     
@@ -26,6 +32,8 @@ export const uploadImage = async (file) => {
         'Content-Type': 'multipart/form-data'
       }
     });
+    
+    console.log('Upload response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error uploading image:', error);

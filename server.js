@@ -101,6 +101,7 @@ if (isProduction || hasBuildFolder) {
 app.get('/api/images', (req, res) => {
   // Log request for debugging
   console.log('API request received: GET /api/images');
+  console.log('Request headers:', req.headers);
   
   try {
     // Check if directory exists
@@ -110,11 +111,17 @@ app.get('/api/images', (req, res) => {
       return res.json([]);
     }
     
+    console.log('Uploads folder exists:', fs.existsSync(UPLOADS_FOLDER));
+    console.log('Uploads folder path:', UPLOADS_FOLDER);
+    
+    // List all files in the uploads folder
     fs.readdir(UPLOADS_FOLDER, (err, files) => {
       if (err) {
         console.error('Error reading uploads folder:', err);
         return res.json([]); // Return empty array instead of error for better client resilience
       }
+      
+      console.log('All files in uploads folder:', files);
       
       // Ensure files is an array
       if (!Array.isArray(files)) {
@@ -122,16 +129,27 @@ app.get('/api/images', (req, res) => {
         return res.json([]);
       }
       
-      const images = files
-        .filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
-        .map(file => ({
+      // Filter and map files to image objects
+      const imageFiles = files.filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file));
+      console.log('Image files found:', imageFiles);
+      
+      const images = imageFiles.map(file => {
+        const imageObject = {
           id: path.parse(file).name,
           name: file,
           path: `/uploads/${file}`,
           url: `/uploads/${file}`
-        }));
+        };
+        
+        // Verify each image exists
+        const fullPath = path.join(UPLOADS_FOLDER, file);
+        const fileExists = fs.existsSync(fullPath);
+        console.log(`Image ${file} - full path: ${fullPath}, exists: ${fileExists}`);
+        
+        return imageObject;
+      });
       
-      console.log(`Returning ${images.length} images`);
+      console.log(`Returning ${images.length} images:`, images);
       res.json(images);
     });
   } catch (error) {
@@ -143,6 +161,7 @@ app.get('/api/images', (req, res) => {
 // Upload image
 app.post('/api/upload', (req, res) => {
   console.log('API request received: POST /api/upload');
+  console.log('Request headers:', req.headers);
   
   try {
     // Ensure uploads folder exists
@@ -150,6 +169,9 @@ app.post('/api/upload', (req, res) => {
       console.log(`Creating uploads folder: ${UPLOADS_FOLDER}`);
       fs.mkdirSync(UPLOADS_FOLDER, { recursive: true });
     }
+    
+    console.log('Uploads folder path:', UPLOADS_FOLDER);
+    console.log('Uploads folder exists:', fs.existsSync(UPLOADS_FOLDER));
     
     // Use multer middleware with error handling
     upload.single('image')(req, res, (err) => {
@@ -163,13 +185,24 @@ app.post('/api/upload', (req, res) => {
         return res.status(400).json({ error: 'No image uploaded' });
       }
       
-      console.log(`File uploaded successfully: ${req.file.filename}`);
-      res.json({
+      // Get the file details
+      const fileDetails = {
         id: path.parse(req.file.filename).name,
         name: req.file.filename,
         path: `/uploads/${req.file.filename}`,
         url: `/uploads/${req.file.filename}`
-      });
+      };
+      
+      console.log(`File uploaded successfully: ${req.file.filename}`);
+      console.log('File details:', fileDetails);
+      console.log('File saved to:', req.file.path);
+      
+      // Verify the file exists
+      const fullPath = path.join(UPLOADS_FOLDER, req.file.filename);
+      console.log('Full file path:', fullPath);
+      console.log('File exists:', fs.existsSync(fullPath));
+      
+      res.json(fileDetails);
     });
   } catch (error) {
     console.error('Unexpected error in /api/upload:', error);
