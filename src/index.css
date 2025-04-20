@@ -11,3 +11,15 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Modern forced colors mode equivalents to replace deprecated -ms-high-contrast */
+@media (forced-colors: active) {
+  /* Add forced colors mode overrides here */
+  .slideshow-image {
+    forced-color-adjust: none;
+  }
+  
+  button, a {
+    forced-color-adjust: auto;
+  }
+}
