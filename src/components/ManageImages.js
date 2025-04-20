@@ -182,9 +182,7 @@ const ManageImages = () => {
                   onClick={() => toggleImageSelection(image.id)}
                 >
                   <img 
-                    src={process.env.NODE_ENV === 'production' 
-                      ? image.url 
-                      : `${process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000'}${image.url}`} 
+                    src={image.url} 
                     alt={image.name} 
                   />
                   <div className="image-overlay">

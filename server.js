@@ -50,8 +50,13 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Serve uploads folder explicitly
+// Serve uploads folder explicitly - make sure it's accessible in both dev and prod
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+
+// In production, handle the case where React tries to access uploads from the build directory
+if (process.env.NODE_ENV === 'production') {
+  app.use('/build/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+}
 
 // For production, serve the React build files
 if (process.env.NODE_ENV === 'production') {
