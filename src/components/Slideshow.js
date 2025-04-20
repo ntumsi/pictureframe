@@ -158,9 +158,12 @@ const Slideshow = () => {
                 console.log('Failed URL:', images[currentIndex].url);
               }}
             />
-            <div style={{ position: 'absolute', bottom: '50px', left: '10px', background: 'rgba(0,0,0,0.5)', color: 'white', padding: '5px', fontSize: '12px' }}>
-              Debug: {images[currentIndex].url}
-            </div>
+            {/* Show debug info only in development or when debug flag is set */}
+            {(process.env.NODE_ENV === 'development' || process.env.REACT_APP_SHOW_DEBUG === 'true') && (
+              <div style={{ position: 'absolute', bottom: '50px', left: '10px', background: 'rgba(0,0,0,0.5)', color: 'white', padding: '5px', fontSize: '12px' }}>
+                Debug: {images[currentIndex].url}
+              </div>
+            )}
           </>
         )}
       </div>

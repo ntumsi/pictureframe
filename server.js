@@ -78,10 +78,30 @@ app.use(cors({
 // Handle preflight requests explicitly
 app.options('*', cors());
 
-// Add server identification header
+// Add server identification header and security headers
 app.use((req, res, next) => {
+  // Server identification
   res.setHeader('X-Server', 'PictureFrame/1.0');
   res.setHeader('X-Server-PID', process.pid);
+  
+  // Security headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  
+  // Suppress console warnings with CSP
+  res.setHeader('Content-Security-Policy', 
+    "default-src 'self'; " +
+    "img-src 'self' data: blob:; " +
+    "style-src 'self' 'unsafe-inline'; " + 
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+    "connect-src 'self' localhost:*; " +
+    "worker-src 'self' blob:; " +
+    "frame-src 'self'; " +
+    "object-src 'none'; " + 
+    "report-uri /api/csp-report"
+  );
+  
   next();
 });
 
@@ -366,6 +386,17 @@ app.delete('/api/images/:id', (req, res) => {
 
 // IMPORTANT: Place API routes BEFORE the catch-all route
 // Make sure all API routes are defined before this section
+
+// Add CSP report endpoint
+app.post('/api/csp-report', (req, res) => {
+  // Log CSP violations but don't take action
+  if (req.body) {
+    console.log('CSP Violation:', req.body);
+  } else {
+    console.log('CSP Violation report with no data');
+  }
+  res.status(204).end();
+});
 
 // Debug middleware for all API routes
 app.use('/api/*', (req, res, next) => {
