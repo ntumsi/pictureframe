@@ -7,6 +7,48 @@ import axios from 'axios';
 // Hardcode the API_URL to always use port 5000
 const API_URL = 'http://localhost:5000/api';
 
+// Configure axios defaults
+axios.defaults.withCredentials = true; // Enable cookies/credentials
+axios.defaults.timeout = 30000; // 30 second timeout
+axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+
+// Add request interceptor for debugging
+axios.interceptors.request.use(
+  config => {
+    console.log(`Making ${config.method.toUpperCase()} request to: ${config.url}`);
+    return config;
+  },
+  error => {
+    console.error('Request error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for debugging
+axios.interceptors.response.use(
+  response => {
+    console.log(`Response from ${response.config.url}:`, response.status);
+    return response;
+  },
+  error => {
+    console.error('Response error:', error.message);
+    console.error('Failed URL:', error.config?.url);
+    
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error('Error status:', error.response.status);
+      console.error('Error headers:', error.response.headers);
+      console.error('Error data:', error.response.data);
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('No response received');
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
 console.log('API Service initialized with URL:', API_URL);
 console.log('Current location:', window.location.href);
 console.log('Environment:', process.env.NODE_ENV);
@@ -72,36 +114,66 @@ export const getAllImages = async () => {
 
 export const uploadImage = async (file) => {
   try {
-    console.log('Uploading image to:', `${API_URL}/upload`);
+    const uploadUrl = `${API_URL}/upload`;
+    console.log('Uploading image to:', uploadUrl);
     console.log('File being uploaded:', file.name, file.type, file.size);
     
+    // Create form data
     const formData = new FormData();
     formData.append('image', file);
     
-    const response = await axios.post(`${API_URL}/upload`, formData, {
+    // Add timestamp to prevent caching
+    const timestamp = new Date().getTime();
+    
+    // Use fetch API instead of axios for file uploads
+    console.log('Using fetch API for upload');
+    const fetchResponse = await fetch(uploadUrl + `?_=${timestamp}`, {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+      mode: 'cors',
       headers: {
-        'Content-Type': 'multipart/form-data'
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-Client-Debug': 'true',
+        'X-Timestamp': timestamp.toString()
       }
     });
     
-    // Safe parse if needed
-    let parsedData;
-    if (typeof response.data === 'string') {
-      try {
-        parsedData = JSON.parse(response.data);
-      } catch (e) {
-        console.error('Failed to parse upload response data:', e);
-        parsedData = { error: 'Failed to parse response' };
-      }
-    } else {
-      parsedData = response.data;
+    if (!fetchResponse.ok) {
+      throw new Error(`Upload failed with status: ${fetchResponse.status}`);
     }
     
-    console.log('Upload response:', parsedData);
+    const responseText = await fetchResponse.text();
+    console.log('Raw upload response:', responseText);
+    
+    // Parse response
+    let parsedData;
+    try {
+      parsedData = JSON.parse(responseText);
+    } catch (e) {
+      console.error('Failed to parse upload response:', e);
+      console.error('Response text:', responseText.substring(0, 200));
+      return { 
+        error: 'Failed to parse response',
+        id: 'error-' + Date.now(),
+        name: file.name,
+        path: '#error',
+        url: '#error'
+      };
+    }
+    
+    console.log('Parsed upload response:', parsedData);
     return parsedData;
   } catch (error) {
     console.error('Error uploading image:', error);
-    throw error;
+    // Return a usable object instead of throwing
+    return { 
+      error: error.message || 'Upload failed',
+      id: 'error-' + Date.now(),
+      name: file.name,
+      path: '#error',
+      url: '#error'
+    };
   }
 };
 
