@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getAllImages } from '../api/imageService';
 import '../styles/Slideshow.css';
@@ -44,7 +44,7 @@ const Slideshow = () => {
   }, [images]);
 
   // Toggle fullscreen
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     if (!isFullscreen) {
       if (document.documentElement.requestFullscreen) {
         document.documentElement.requestFullscreen();
@@ -55,7 +55,7 @@ const Slideshow = () => {
       }
     }
     setIsFullscreen(!isFullscreen);
-  };
+  }, [isFullscreen]);
 
   // Monitor fullscreen changes
   useEffect(() => {
@@ -101,7 +101,7 @@ const Slideshow = () => {
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [images]);
+  }, [images, toggleFullscreen]);
 
   const goToNext = () => {
     setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
