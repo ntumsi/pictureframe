@@ -48,10 +48,19 @@ sudo apt update
 sudo apt upgrade -y
 ```
 
-2. Install Node.js and npm:
+2. Install Node.js and npm (LTS version recommended):
 ```
+# Clean any old installations (if needed)
+sudo apt remove nodejs
+sudo apt purge nodejs
+
+# Install using NodeSource repository
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
+
+# Alternatively, for older Raspberry Pi models use Node.js 18.x
+# curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+# sudo apt install -y nodejs
 ```
 
 3. Verify installation:
@@ -251,13 +260,20 @@ sudo nano /etc/X11/xorg.conf.d/40-libinput.conf
 
 ## Technologies Used
 
-- React
-- React Router
-- Express.js
-- Multer (for file uploads)
-- Axios
-- UUID
-- Concurrently
+- React 18.2.0
+- React Router DOM 6.22.1
+- Express.js 4.18.2
+- Multer 1.4.5-lts.2 (for file uploads)
+- Axios 1.6.7
+- UUID 9.0.1
+- Concurrently 8.2.2
+
+## Security Notes
+
+This application has been audited and secured against known vulnerabilities:
+- All dependencies are updated to secure versions
+- Package overrides are in place to ensure transitive dependencies are secure
+- Regular security audits are recommended (run `npm audit` periodically)
 
 ## License
 
