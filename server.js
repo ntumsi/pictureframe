@@ -131,10 +131,16 @@ console.log('- /api/uploads/[filename]');
 // Serve static files from public and build folders
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Serve build directory if it exists
+// Check if build folder exists and determine environment
 const buildPath = path.join(__dirname, 'build');
 const hasBuildFolder = fs.existsSync(buildPath);
-const isProduction = true; // Force production behavior for consistency
+
+// Get environment from NODE_ENV but use consistent behavior
+const isProduction = process.env.NODE_ENV === 'production';
+
+console.log(`Environment: ${process.env.NODE_ENV}`);
+console.log(`Build folder exists: ${hasBuildFolder}`);
+console.log(`Using production mode: ${isProduction}`);
 
 if (hasBuildFolder) {
   console.log(`Serving static files from build folder: ${buildPath}`);

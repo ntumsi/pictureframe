@@ -43,6 +43,7 @@ echo "  REACT_APP_API_URL: $REACT_APP_API_URL"
 echo "  PORT: $PORT"
 echo "  Server URL: http://localhost:$PORT"
 echo "  API URL: $REACT_APP_API_URL"
+echo "  Uploads Path: $(pwd)/public/uploads"
 
 # Start the server
 node server.js

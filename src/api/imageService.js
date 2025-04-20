@@ -1,11 +1,19 @@
 import axios from 'axios';
 
-// Get the API URL from environment or use a default
-// In development, we use http://localhost:5000/api
-// In production with relative URLs, we just use /api
+// Get the API URL from environment or calculate it based on window.location
+const getApiUrl = () => {
+  // First priority: environment variable
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  
+  // Second priority: derive from current location
+  // In both dev and prod, use localhost:5000/api
+  return 'http://localhost:5000/api';
+};
 
-// For the API URL, we'll use the environment variable or fall back to relative path
-const API_URL = process.env.REACT_APP_API_URL || '/api';
+// Use consistent API URL across environments
+const API_URL = getApiUrl();
 
 // Configure axios defaults
 axios.defaults.withCredentials = true; // Enable cookies/credentials
