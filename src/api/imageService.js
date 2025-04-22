@@ -31,10 +31,10 @@ export const getAllImages = async () => {
     const url = `${API_URL}/images?_=${timestamp}`;
     console.log('Fetching images from:', url);
     
-    // Add debug headers
+    // Add debug headers (using lowercase for better CORS compatibility)
     const headers = {
-      'X-Client-Debug': 'true',
-      'X-Timestamp': timestamp.toString()
+      'x-client-debug': 'true',
+      'x-timestamp': timestamp.toString()
     };
     
     const response = await axios.get(url, { 

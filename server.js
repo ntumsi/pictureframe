@@ -48,7 +48,7 @@ console.log(`Server starting in ${process.env.NODE_ENV || 'development'} mode wi
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'cache-control', 'Pragma', 'pragma', 'X-Client-Debug', 'X-Timestamp'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'cache-control', 'Pragma', 'pragma', 'X-Client-Debug', 'X-Timestamp', 'x-client-debug', 'x-timestamp'],
   exposedHeaders: ['Content-Type', 'X-API-Route', 'X-API-Server', 'X-Server'],
   credentials: true,
   maxAge: 86400 // 24 hours
@@ -64,6 +64,9 @@ app.use((req, res, next) => {
 // Handle OPTIONS preflight requests manually
 app.options('*', (req, res) => {
   console.log('Handling OPTIONS preflight request for:', req.originalUrl);
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cache-Control, cache-control, Pragma, pragma, X-Client-Debug, X-Timestamp, x-client-debug, x-timestamp');
   res.status(204).end();
 });
 
