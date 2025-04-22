@@ -1,11 +1,24 @@
 import axios from 'axios';
 
-// IMPORTANT: We're forcing the API_URL to ALWAYS use the backend server directly
-// This ensures we're always hitting the Express API server directly and not going through the static server
-// or getting confused by client-side routing
+// Determine the appropriate API URL dynamically
+const getApiUrl = () => {
+  // Check if API URL is configured via env variable (set in start.sh)
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  
+  // If we're running in production mode with built-in server
+  if (process.env.NODE_ENV === 'production') {
+    // Use the same domain as the web app, assuming the backend is hosted there
+    const host = window.location.protocol + '//' + window.location.host;
+    return `${host}/api`;
+  }
+  
+  // For development, we'll connect to the Express backend on port 5000
+  return 'http://localhost:5000/api';
+};
 
-// Hardcode the API_URL to always use port 5000
-const API_URL = 'http://localhost:5000/api';
+const API_URL = getApiUrl();
 
 console.log('API Service initialized with URL:', API_URL);
 console.log('Current location:', window.location.href);
@@ -21,12 +34,13 @@ export const getAllImages = async () => {
     // Add debug headers
     const headers = {
       'X-Client-Debug': 'true',
-      'X-Timestamp': timestamp.toString(),
-      'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache'
+      'X-Timestamp': timestamp.toString()
     };
     
-    const response = await axios.get(url, { headers });
+    const response = await axios.get(url, { 
+      headers,
+      withCredentials: false
+    });
     
     // Log the raw response for debugging
     console.log('Raw response headers:', response.headers);

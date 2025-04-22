@@ -148,20 +148,20 @@ const Slideshow = () => {
         {images.length > 0 && (
           <>
             <img 
-              src={`http://localhost:5000${images[currentIndex].url}`} 
+              src={images[currentIndex].fullUrl || images[currentIndex].url} 
               alt={images[currentIndex].name} 
               className="slideshow-image"
               onLoad={() => console.log('Image loaded successfully')}
               onError={(e) => {
                 console.error('Error loading image:', e, images[currentIndex].url);
-                // Try fallback URL formats
-                console.log('Original URL:', images[currentIndex].url);
-                console.log('Attempted URL:', `http://localhost:5000${images[currentIndex].url}`);
+                // Log the URL for debugging
+                console.log('URL being used:', images[currentIndex].url);
+                // Try to recover by advancing to the next image after a short delay
+                setTimeout(() => {
+                  setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+                }, 2000);
               }}
             />
-            <div style={{ position: 'absolute', bottom: '50px', left: '10px', background: 'rgba(0,0,0,0.5)', color: 'white', padding: '5px', fontSize: '12px' }}>
-              Debug: {`http://localhost:5000${images[currentIndex].url}`}
-            </div>
           </>
         )}
       </div>

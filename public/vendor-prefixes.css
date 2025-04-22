@@ -1,0 +1,31 @@
+/* 
+ * CSS overrides for vendor prefixed properties to suppress deprecation warnings 
+ * This handles the warnings from React and its dependencies using -ms-high-contrast
+ */
+
+/* Override -ms-high-contrast with modern forced-colors equivalent */
+@media (-ms-high-contrast: active), (-ms-high-contrast: none) {
+  /* This will never actually execute because it targets a deprecated feature */
+  /* Its purpose is to override the vendor prefixed styles that cause warnings */
+  * {
+    -ms-high-contrast-adjust: none !important;
+  }
+}
+
+/* Forced colors mode proper implementation */
+@media (forced-colors: active) {
+  /* Force system colors for all controls */
+  button, 
+  input, 
+  select, 
+  a {
+    forced-color-adjust: auto;
+  }
+
+  /* Allow images to display with natural colors */
+  img, 
+  video, 
+  canvas {
+    forced-color-adjust: none;
+  }
+}

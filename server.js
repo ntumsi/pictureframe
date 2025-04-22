@@ -48,7 +48,10 @@ console.log(`Server starting in ${process.env.NODE_ENV || 'development'} mode wi
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'cache-control', 'Pragma', 'pragma', 'X-Client-Debug', 'X-Timestamp'],
+  exposedHeaders: ['Content-Type', 'X-API-Route', 'X-API-Server', 'X-Server'],
+  credentials: true,
+  maxAge: 86400 // 24 hours
 }));
 
 // Add server identification header
@@ -58,18 +61,50 @@ app.use((req, res, next) => {
   next();
 });
 
+// Handle OPTIONS preflight requests manually
+app.options('*', (req, res) => {
+  console.log('Handling OPTIONS preflight request for:', req.originalUrl);
+  res.status(204).end();
+});
+
+// Debug middleware for all API routes - place this BEFORE API routes
+app.use('/api/*', (req, res, next) => {
+  console.log(`API REQUEST: ${req.method} ${req.originalUrl}`);
+  console.log('Headers:', req.headers);
+  
+  // Make sure this is correctly identified as an API route
+  res.set('X-API-Route', 'true');
+  
+  // Add a specific header to API responses
+  res.set('X-API-Server', 'picture-frame');
+  
+  next();
+});
+
 // Configure JSON parsing with error handling
 app.use(express.json({
   verify: (req, res, buf, encoding) => {
     try {
-      JSON.parse(buf);
+      // Only attempt to parse if there's a body
+      if (buf.length > 0) {
+        JSON.parse(buf);
+      }
     } catch (e) {
       console.error('Invalid JSON received:', e);
-      res.status(400).json({ error: 'Invalid JSON' });
-      throw new Error('Invalid JSON');
+      // Don't throw here as it's difficult to handle properly
+      // Instead, we'll handle malformed JSON in the routes
+      req.invalidJson = true;
     }
   }
 }));
+
+// Middleware to check for invalid JSON after parsing
+app.use((req, res, next) => {
+  if (req.invalidJson) {
+    return res.status(400).json({ error: 'Invalid JSON' });
+  }
+  next();
+});
 
 // Ensure all JSON responses have the correct Content-Type header
 app.use((req, res, next) => {
@@ -162,12 +197,20 @@ app.get('/api/images', (req, res) => {
       const imageFiles = files.filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file));
       console.log('Image files found:', imageFiles);
       
+      // Get base URL for images
+      const protocol = req.secure ? 'https' : 'http';
+      const host = req.headers.host;
+      const baseUrl = `${protocol}://${host}`;
+      
       const images = imageFiles.map(file => {
+        const urlPath = `/uploads/${file}`;
+        
         const imageObject = {
           id: path.parse(file).name,
           name: file,
-          path: `/uploads/${file}`,
-          url: `/uploads/${file}`
+          path: urlPath,
+          url: urlPath, // Keep relative path as primary URL
+          fullUrl: `${baseUrl}${urlPath}` // Also provide the full URL as an option
         };
         
         // Verify each image exists
@@ -216,11 +259,19 @@ app.post('/api/upload', (req, res) => {
       }
       
       // Get the file details
+      const urlPath = `/uploads/${req.file.filename}`;
+      
+      // Build full URL
+      const protocol = req.secure ? 'https' : 'http';
+      const host = req.headers.host;
+      const baseUrl = `${protocol}://${host}`;
+      
       const fileDetails = {
         id: path.parse(req.file.filename).name,
         name: req.file.filename,
-        path: `/uploads/${req.file.filename}`,
-        url: `/uploads/${req.file.filename}`
+        path: urlPath,
+        url: urlPath,
+        fullUrl: `${baseUrl}${urlPath}`
       };
       
       console.log(`File uploaded successfully: ${req.file.filename}`);
@@ -280,22 +331,7 @@ app.delete('/api/images/:id', (req, res) => {
   }
 });
 
-// IMPORTANT: Place API routes BEFORE the catch-all route
-// Make sure all API routes are defined before this section
-
-// Debug middleware for all API routes
-app.use('/api/*', (req, res, next) => {
-  console.log(`API REQUEST: ${req.method} ${req.originalUrl}`);
-  console.log('Headers:', req.headers);
-  
-  // Make sure this is correctly identified as an API route
-  res.set('X-API-Route', 'true');
-  
-  // Add a specific header to API responses
-  res.set('X-API-Server', 'picture-frame');
-  
-  next();
-});
+// IMPORTANT: API routes are defined below
 
 // Serve the React app for any other routes when build folder exists
 if (isProduction || hasBuildFolder) {
