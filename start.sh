@@ -14,19 +14,24 @@ fi
 
 echo "Using build folder"
 
-# Always ensure the uploads symlink is set up correctly
+# ALWAYS recreate the uploads symlink to ensure it's correct
 echo "Setting up uploads folder symlink..."
 if [ -d "./build" ]; then
-  # Remove the directory if it exists but is not a symlink
-  if [ -d "./build/uploads" ] && [ ! -L "./build/uploads" ]; then
-    echo "Removing existing uploads directory in build folder..."
+  # First remove the directory or symlink if it exists
+  if [ -e "./build/uploads" ]; then
+    echo "Removing existing uploads directory or symlink in build folder..."
     rm -rf ./build/uploads
   fi
   
-  # Create the symlink if it doesn't exist
-  if [ ! -e "./build/uploads" ]; then
-    echo "Creating symlink for uploads folder..."
-    ln -sf ../public/uploads ./build/uploads
+  # Now create a fresh symlink
+  echo "Creating fresh symlink for uploads folder..."
+  ln -sf ../public/uploads ./build/uploads
+  
+  # Verify it was created correctly
+  if [ -L "./build/uploads" ]; then
+    echo "Symlink created successfully"
+  else
+    echo "WARNING: Failed to create symlink!"
   fi
 fi
 
@@ -52,14 +57,12 @@ fi
 # Always use the Express server (which handles both static files and API)
 echo "Starting app with Express server..."
 
-# Force API URL to localhost:5000 for reliability
-export REACT_APP_API_URL=http://localhost:5000/api
+# Set production environment
 export NODE_ENV=production
 
 # Print configuration for debugging
 echo "Configuration:"
-echo "  NODE_ENV: $NODE_ENV"
-echo "  REACT_APP_API_URL: $REACT_APP_API_URL"
+echo "  NODE_ENV: $NODE_ENV" 
 echo "  PORT: ${PORT:-5000}"
 
 # Start the server

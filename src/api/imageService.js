@@ -2,20 +2,10 @@ import axios from 'axios';
 
 // Determine the appropriate API URL dynamically
 const getApiUrl = () => {
-  // Check if API URL is configured via env variable (set in start.sh)
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
-  }
-  
-  // If we're running in production mode with built-in server
-  if (process.env.NODE_ENV === 'production') {
-    // Use the same domain as the web app, assuming the backend is hosted there
-    const host = window.location.protocol + '//' + window.location.host;
-    return `${host}/api`;
-  }
-  
-  // For development, we'll connect to the Express backend on port 5000
-  return 'http://localhost:5000/api';
+  // In production mode, always use the same host as the page
+  // This ensures it works correctly regardless of where it's hosted
+  const host = window.location.protocol + '//' + window.location.host;
+  return `${host}/api`;
 };
 
 const API_URL = getApiUrl();

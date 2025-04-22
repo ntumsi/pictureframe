@@ -107,7 +107,13 @@ app.use((req, res, next) => {
 });
 
 // Always serve the uploads folder
-app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads'), {
+  // Set these options to ensure proper file serving
+  maxAge: '1d',       // Cache for 1 day
+  etag: true,         // Use ETags for caching
+  lastModified: true, // Send Last-Modified headers
+  fallthrough: true   // Try the next middleware if file not found
+}));
 
 // Always serve some common static files from public folder
 app.use(express.static(path.join(__dirname, 'public')));
@@ -122,9 +128,6 @@ if (isProduction || hasBuildFolder) {
   
   // Serve static files from the React build folder
   app.use(express.static(path.join(__dirname, 'build')));
-  
-  // Always ensure uploads are accessible from both locations
-  app.use('/build/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
   
   // Handle common static files that might get 404 errors
   const staticFiles = [
