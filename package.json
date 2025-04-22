@@ -52,6 +52,7 @@
       "last 1 safari version"
     ]
   },
+  "proxy": "http://localhost:5000",
   "devDependencies": {
     "concurrently": "^8.2.2",
     "serve": "^14.2.4"

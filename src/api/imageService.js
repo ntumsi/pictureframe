@@ -2,7 +2,13 @@ import axios from 'axios';
 
 // Determine the appropriate API URL dynamically
 const getApiUrl = () => {
-  // In production mode, always use the same host as the page
+  // Check if we're running on the React development server (port 3000)
+  if (window.location.port === '3000') {
+    // When in development mode on port 3000, always use port 5000 for API
+    return 'http://localhost:5000/api';
+  }
+  
+  // In all other cases (production), use the same host as the page
   // This ensures it works correctly regardless of where it's hosted
   const host = window.location.protocol + '//' + window.location.host;
   return `${host}/api`;
@@ -21,9 +27,13 @@ export const getAllImages = async () => {
     const url = `${API_URL}/images?_=${timestamp}`;
     console.log('Fetching images from:', url);
     
-    // Skip custom headers to avoid CORS issues
+    // Properly handle the request with transformResponse to avoid automatic parsing
     const response = await axios.get(url, { 
-      withCredentials: false
+      withCredentials: false,
+      transformResponse: [(data) => {
+        // Return the data as-is, don't let axios attempt to parse it
+        return data;
+      }]
     });
     
     // Log the raw response for debugging
@@ -35,14 +45,18 @@ export const getAllImages = async () => {
     if (typeof response.data === 'string') {
       try {
         // Check if it looks like HTML
-        if (response.data.trim().startsWith('<!')) {
-          console.error('Received HTML instead of JSON:', response.data.substring(0, 100));
+        if (response.data.trim().startsWith('<!DOCTYPE') || 
+            response.data.trim().startsWith('<!doctype') || 
+            response.data.trim().startsWith('<!')) {
+          console.error('Received HTML instead of JSON:', response.data.substring(0, 200));
+          console.log('Full HTML response length:', response.data.length);
           return [];
         }
         
         parsedData = JSON.parse(response.data);
       } catch (e) {
         console.error('Failed to parse response data:', e);
+        console.error('Response content (first 500 chars):', response.data.substring(0, 500));
         parsedData = [];
       }
     } else {
@@ -70,22 +84,39 @@ export const getAllImages = async () => {
 
 export const uploadImage = async (file) => {
   try {
-    console.log('Uploading image to:', `${API_URL}/upload`);
+    const uploadUrl = `${API_URL}/upload`;
+    console.log('Uploading image to:', uploadUrl);
     console.log('File being uploaded:', file.name, file.type, file.size);
     
     const formData = new FormData();
     formData.append('image', file);
     
-    // Only using minimal headers to avoid CORS issues
-    const response = await axios.post(`${API_URL}/upload`, formData);
+    // Set proper headers for multipart form data but let the browser set the boundary
+    const response = await axios.post(uploadUrl, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      // Don't transform the response - handle it directly
+      transformResponse: [(data) => {
+        // Return the data as-is
+        return data;
+      }]
+    });
     
-    // Safe parse if needed
+    // Safely handle the response
     let parsedData;
     if (typeof response.data === 'string') {
       try {
+        // Check if the response looks like HTML
+        if (response.data.trim().startsWith('<!DOCTYPE') || response.data.trim().startsWith('<!doctype')) {
+          console.error('Received HTML instead of JSON:', response.data.substring(0, 200));
+          return { error: 'Received HTML response, API endpoint may be incorrect' };
+        }
+        
         parsedData = JSON.parse(response.data);
       } catch (e) {
         console.error('Failed to parse upload response data:', e);
+        console.error('Response content:', response.data.substring(0, 500));
         parsedData = { error: 'Failed to parse response' };
       }
     } else {
@@ -96,22 +127,47 @@ export const uploadImage = async (file) => {
     return parsedData;
   } catch (error) {
     console.error('Error uploading image:', error);
-    throw error;
+    console.error('Error details:', error.response?.status, error.response?.statusText);
+    if (error.response?.data) {
+      console.error('Error response data:', 
+        typeof error.response.data === 'string' 
+          ? error.response.data.substring(0, 200) 
+          : error.response.data
+      );
+    }
+    return { error: 'Upload failed: ' + (error.message || 'Unknown error') };
   }
 };
 
 export const deleteImage = async (imageId) => {
   try {
     console.log('Deleting image:', imageId);
-    const response = await axios.delete(`${API_URL}/images/${imageId}`);
+    const deleteUrl = `${API_URL}/images/${imageId}`;
+    console.log('Delete URL:', deleteUrl);
+    
+    const response = await axios.delete(deleteUrl, {
+      transformResponse: [(data) => {
+        // Return the data as-is
+        return data;
+      }]
+    });
     
     // Safe parse if needed
     let parsedData;
     if (typeof response.data === 'string') {
       try {
+        // Check if the response looks like HTML
+        if (response.data.trim().startsWith('<!DOCTYPE') || 
+            response.data.trim().startsWith('<!doctype') || 
+            response.data.trim().startsWith('<!')) {
+          console.error('Received HTML instead of JSON:', response.data.substring(0, 200));
+          return { success: false, error: 'Received HTML response, API endpoint may be incorrect' };
+        }
+        
         parsedData = JSON.parse(response.data);
       } catch (e) {
         console.error('Failed to parse delete response data:', e);
+        console.error('Response content:', response.data.substring(0, 500));
         parsedData = { success: false, error: 'Failed to parse response' };
       }
     } else {
@@ -122,6 +178,14 @@ export const deleteImage = async (imageId) => {
     return parsedData;
   } catch (error) {
     console.error('Error deleting image:', error);
-    return { success: false, error: error.message };
+    console.error('Error details:', error.response?.status, error.response?.statusText);
+    if (error.response?.data) {
+      console.error('Error response data:', 
+        typeof error.response.data === 'string' 
+          ? error.response.data.substring(0, 200) 
+          : error.response.data
+      );
+    }
+    return { success: false, error: 'Delete failed: ' + (error.message || 'Unknown error') };
   }
 };
