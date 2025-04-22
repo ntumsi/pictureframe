@@ -31,14 +31,8 @@ export const getAllImages = async () => {
     const url = `${API_URL}/images?_=${timestamp}`;
     console.log('Fetching images from:', url);
     
-    // Add debug headers (using lowercase for better CORS compatibility)
-    const headers = {
-      'x-client-debug': 'true',
-      'x-timestamp': timestamp.toString()
-    };
-    
+    // Skip custom headers to avoid CORS issues
     const response = await axios.get(url, { 
-      headers,
       withCredentials: false
     });
     
@@ -92,11 +86,8 @@ export const uploadImage = async (file) => {
     const formData = new FormData();
     formData.append('image', file);
     
-    const response = await axios.post(`${API_URL}/upload`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    // Only using minimal headers to avoid CORS issues
+    const response = await axios.post(`${API_URL}/upload`, formData);
     
     // Safe parse if needed
     let parsedData;

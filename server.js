@@ -44,15 +44,8 @@ const upload = multer({
 // Log the NODE_ENV for debugging
 console.log(`Server starting in ${process.env.NODE_ENV || 'development'} mode with PID ${process.pid}`);
 
-// Configure CORS to allow requests from other devices on the network
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'cache-control', 'Pragma', 'pragma', 'X-Client-Debug', 'X-Timestamp', 'x-client-debug', 'x-timestamp'],
-  exposedHeaders: ['Content-Type', 'X-API-Route', 'X-API-Server', 'X-Server'],
-  credentials: true,
-  maxAge: 86400 // 24 hours
-}));
+// Configure CORS to allow requests from other devices on the network - simplified version
+app.use(cors());
 
 // Add server identification header
 app.use((req, res, next) => {
@@ -61,14 +54,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Handle OPTIONS preflight requests manually
-app.options('*', (req, res) => {
-  console.log('Handling OPTIONS preflight request for:', req.originalUrl);
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cache-Control, cache-control, Pragma, pragma, X-Client-Debug, X-Timestamp, x-client-debug, x-timestamp');
-  res.status(204).end();
-});
+// Let the CORS middleware handle OPTIONS requests automatically
+app.options('*', cors());
 
 // Debug middleware for all API routes - place this BEFORE API routes
 app.use('/api/*', (req, res, next) => {
