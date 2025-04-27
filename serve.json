@@ -2,9 +2,6 @@
   "public": "build",
   "cleanUrls": true,
   "trailingSlash": false,
-  "listen": {
-    "host": "0.0.0.0"
-  },
   "rewrites": [
     { "source": "/manifest.json", "destination": "/manifest.json" },
     { "source": "/favicon.ico", "destination": "/favicon.ico" },

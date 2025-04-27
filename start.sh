@@ -89,12 +89,13 @@ if [ "$1" = "--serve" ]; then
   # Choose which serve command to use based on config file availability
   if [ -f "$CONFIG_PATH" ]; then
     echo "Using config from: $CONFIG_PATH"
-    npx serve -s build --config "$CONFIG_PATH" --listen "0.0.0.0:${PORT:-3000}" --no-clipboard
+    # serve uses separate host and port flags
+    npx serve -s build --config "$CONFIG_PATH" --listen ${PORT:-3000} --no-clipboard
   else
     echo "Config file not found at $CONFIG_PATH"
     echo "Using built-in configuration"
     # Fallback to built-in configuration
-    npx serve -s build --listen "0.0.0.0:${PORT:-3000}" --no-clipboard
+    npx serve -s build --listen ${PORT:-3000} --no-clipboard
   fi
 else
   # Use the Express server by default (which handles both static files and API)
