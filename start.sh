@@ -73,32 +73,63 @@ echo "  IP ADDRESS: ${IP_ADDRESS}"
 echo ""
 echo "Access the app on your network at:"
 if [ "$1" = "--serve" ]; then
-  # Display serve port (default 3000)
-  echo "  http://${IP_ADDRESS}:${PORT:-3000}"
+  # In serve mode, use port 3000 for static content
+  echo "  Static content: http://${IP_ADDRESS}:3000"
+  echo "  API server: http://${IP_ADDRESS}:${PORT:-5000}"
 else
-  # Display Express port (default 5000)
+  # In Express mode, everything is on the same port
   echo "  http://${IP_ADDRESS}:${PORT:-5000}"
 fi
 
 # Check if user wants to use serve instead of Express
 if [ "$1" = "--serve" ]; then
-  echo "Starting app with serve..."
+  echo "Starting app with serve for static content and Express for API..."
+  # We need both servers for serve mode
+  
+  API_PORT="${PORT:-5000}"
+  STATIC_PORT="3000"
+  
+  # Start Express API server in the background
+  echo "Starting Express API server on port $API_PORT..."
+  export HOST="0.0.0.0"
+  export PORT="$API_PORT"
+  node server.js &
+  EXPRESS_PID=$!
+  echo "Express API server started with PID $EXPRESS_PID"
+  
+  # Give the API server a moment to start
+  sleep 2
+  
+  # Verify the API server is running
+  if kill -0 $EXPRESS_PID 2>/dev/null; then
+    echo "API server running on port $API_PORT"
+  else
+    echo "WARNING: API server may not have started properly"
+  fi
+  
   # Try both locations for the config file
   CONFIG_PATH="$(pwd)/serve.json"
   
-  PORT="${PORT:-3000}"
-  
+  echo "Starting static server on port $STATIC_PORT..."
   if [ -f "$CONFIG_PATH" ]; then
     echo "Using config from: $CONFIG_PATH"
-    echo "Listening on port: $PORT (all interfaces)"
+    echo "Listening on port: $STATIC_PORT (all interfaces)"
     
-    # For serve 14.x, we just specify the port, it will bind to 0.0.0.0 by default
-    cd build && npx serve --config "$CONFIG_PATH" --listen "$PORT" --no-clipboard
+    # For serve 14.x, just specify the port
+    cd build && npx serve --config "$CONFIG_PATH" --listen "$STATIC_PORT" --no-clipboard
+    
+    # When serve exits, kill the API server
+    echo "Static server stopped, shutting down API server..."
+    kill $EXPRESS_PID
   else
     echo "Config file not found at $CONFIG_PATH"
     echo "Using built-in configuration"
     # Fallback to built-in configuration
-    cd build && npx serve --listen "$PORT" --no-clipboard
+    cd build && npx serve --listen "$STATIC_PORT" --no-clipboard
+    
+    # When serve exits, kill the API server
+    echo "Static server stopped, shutting down API server..."
+    kill $EXPRESS_PID
   fi
 else
   # Use the Express server by default (which handles both static files and API)

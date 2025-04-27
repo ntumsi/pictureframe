@@ -2,15 +2,21 @@ import axios from 'axios';
 
 // Determine the appropriate API URL dynamically
 const getApiUrl = () => {
-  // Check if we're running on the React development server (port 3000)
-  if (window.location.port === '3000') {
-    // When in development mode on port 3000, always use port 5000 for API
-    return 'http://localhost:5000/api';
+  const protocol = window.location.protocol;
+  const hostname = window.location.hostname;
+  const port = window.location.port;
+  
+  // Case 1: Development with React server on port 3000
+  if (port === '3000') {
+    // When using the development server or serve in production, 
+    // we need to connect to the Express API server on port 5000
+    // Use the same hostname but different port
+    return `${protocol}//${hostname}:5000/api`;
   }
   
-  // In all other cases (production), use the same host as the page
-  // This ensures it works correctly regardless of where it's hosted
-  const host = window.location.protocol + '//' + window.location.host;
+  // Case 2: Production with Express server
+  // Use the same host as the page (the Express server serves both API and static content)
+  const host = protocol + '//' + window.location.host;
   return `${host}/api`;
 };
 

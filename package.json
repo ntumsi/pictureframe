@@ -34,6 +34,7 @@
     "serve": "cd build && serve --config \"../serve.json\" --listen 3000",
     "production": "npm run build && npm run server",
     "production:serve": "npm run build && ./start.sh --serve",
+    "dual": "./start.sh --serve",
     "network": "./network_check.sh"
   },
   "eslintConfig": {
