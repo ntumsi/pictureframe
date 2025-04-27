@@ -31,7 +31,7 @@
     "server": "NODE_ENV=production node server.js",
     "server:dev": "node server.js",
     "dev": "concurrently \"npm run server:dev\" \"npm run start\"",
-    "serve": "serve -s build --config ./serve.json --listen 0.0.0.0:3000",
+    "serve": "serve -s build --config \"$(pwd)/serve.json\" --listen 0.0.0.0:3000",
     "production": "npm run build && npm run server",
     "production:serve": "npm run build && ./start.sh --serve",
     "network": "./network_check.sh"

@@ -33,6 +33,11 @@ if [ -d "./build" ]; then
   else
     echo "WARNING: Failed to create symlink!"
   fi
+  
+  # Also ensure serve.json is in the build directory
+  echo "Ensuring serve.json is in the build directory..."
+  cp -f "./serve.json" "./build/serve.json"
+  echo "serve.json copied to build directory"
 fi
 
 # Also make sure any existing copied uploads in build are properly linked
@@ -67,13 +72,30 @@ echo "  PORT: ${PORT:-5000}"
 echo "  IP ADDRESS: ${IP_ADDRESS}"
 echo ""
 echo "Access the app on your network at:"
-echo "  http://${IP_ADDRESS}:${PORT:-5000}"
+if [ "$1" = "--serve" ]; then
+  # Display serve port (default 3000)
+  echo "  http://${IP_ADDRESS}:${PORT:-3000}"
+else
+  # Display Express port (default 5000)
+  echo "  http://${IP_ADDRESS}:${PORT:-5000}"
+fi
 
 # Check if user wants to use serve instead of Express
 if [ "$1" = "--serve" ]; then
   echo "Starting app with serve..."
-  # Pass the host option to serve to bind to all interfaces
-  npx serve -s build --config ./serve.json --listen ${PORT:-3000} --no-clipboard
+  # Try both locations for the config file
+  CONFIG_PATH="$(pwd)/serve.json"
+  
+  # Choose which serve command to use based on config file availability
+  if [ -f "$CONFIG_PATH" ]; then
+    echo "Using config from: $CONFIG_PATH"
+    npx serve -s build --config "$CONFIG_PATH" --listen "0.0.0.0:${PORT:-3000}" --no-clipboard
+  else
+    echo "Config file not found at $CONFIG_PATH"
+    echo "Using built-in configuration"
+    # Fallback to built-in configuration
+    npx serve -s build --listen "0.0.0.0:${PORT:-3000}" --no-clipboard
+  fi
 else
   # Use the Express server by default (which handles both static files and API)
   echo "Starting app with Express server..."
