@@ -86,19 +86,19 @@ if [ "$1" = "--serve" ]; then
   # Try both locations for the config file
   CONFIG_PATH="$(pwd)/serve.json"
   
-  # Choose which serve command to use based on config file availability
-  LISTEN_ARG="0.0.0.0:${PORT:-3000}"
+  PORT="${PORT:-3000}"
   
   if [ -f "$CONFIG_PATH" ]; then
     echo "Using config from: $CONFIG_PATH"
-    echo "Binding to all interfaces: $LISTEN_ARG"
-    # For serve 14.x, we need to use --listen with host:port format
-    npx serve build --config "$CONFIG_PATH" --listen "$LISTEN_ARG" --no-clipboard
+    echo "Listening on port: $PORT (all interfaces)"
+    
+    # For serve 14.x, we just specify the port, it will bind to 0.0.0.0 by default
+    cd build && npx serve --config "$CONFIG_PATH" --listen "$PORT" --no-clipboard
   else
     echo "Config file not found at $CONFIG_PATH"
     echo "Using built-in configuration"
     # Fallback to built-in configuration
-    npx serve build --listen "$LISTEN_ARG" --no-clipboard
+    cd build && npx serve --listen "$PORT" --no-clipboard
   fi
 else
   # Use the Express server by default (which handles both static files and API)
