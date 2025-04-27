@@ -136,7 +136,7 @@ After=network.target
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/pictureframe
-ExecStart=/usr/bin/bash /home/pi/pictureframe/start.sh serve
+ExecStart=/usr/bin/bash /home/pi/pictureframe/start.sh --serve
 Restart=on-failure
 
 [Install]
@@ -256,17 +256,28 @@ This will:
 - Set up proper symlinks between public/uploads and build/uploads
 - Start the Express server on port 5000
 
+You can also use Serve instead of Express by adding the `--serve` flag:
+```
+./start.sh --serve
+```
+
 **Method 3: Complete build and server in one command**
 ```
 npm run production
 ```
 Same as running `npm run build` followed by `npm run server`
 
-**Method 4: Using Serve (alternative for static serving, limited API functionality)**
+**Method 4: Complete build and serve with static server**
+```
+npm run production:serve
+```
+Builds the app and serves it using the serve static server instead of Express.
+
+**Method 5: Using Serve directly (for static serving only)**
 ```
 npm run serve
 ```
-The application will be accessible at http://localhost:3000 by default, but API functionality may be limited.
+The application will be accessible at http://localhost:3000 by default, but API functionality will be limited unless you're also running the Express server separately.
 
 ### How it Works
 
@@ -346,6 +357,7 @@ This application has been secured against common vulnerabilities:
    - Ensure the uploads directory exists in the correct location
    - Check that the symlink between build/uploads and public/uploads is properly created
    - Verify permissions on the uploads directory (should be readable by the web server)
+   - If using production mode, run `./start.sh` to fix broken symlinks
 
 2. **Upload failures**
    - Check server logs for specific error messages
@@ -356,10 +368,16 @@ This application has been secured against common vulnerabilities:
    - In development mode: make sure both the frontend and backend servers are running
    - In production mode: verify the Express server is running on port 5000
    - Check browser console for CORS errors or network issues
+   - If using `serve` instead of Express, ensure the Express server is also running for API functionality
 
 4. **Cross-device file access**
-   - Ensure your device's firewall allows access to the server port (5000)
+   - Ensure your device's firewall allows access to the server port (5000 for Express, 3000 for serve)
    - Use your device's IP address (not localhost) when accessing from other devices
+
+5. **Production build issues**
+   - The most common issue is broken symlinks between build/uploads and public/uploads
+   - Always run `./start.sh` before serving in production to fix these symlink issues
+   - For comprehensive fix, use `npm run production:serve` or `npm run production`
 
 ## Maintenance
 

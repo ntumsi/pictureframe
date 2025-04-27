@@ -54,9 +54,6 @@ if [ -d "./build" ] && [ -d "./public/uploads" ]; then
   find ./public/uploads -type f -exec chmod 644 {} \;
 fi
 
-# Always use the Express server (which handles both static files and API)
-echo "Starting app with Express server..."
-
 # Set production environment
 export NODE_ENV=production
 
@@ -65,5 +62,12 @@ echo "Configuration:"
 echo "  NODE_ENV: $NODE_ENV" 
 echo "  PORT: ${PORT:-5000}"
 
-# Start the server
-node server.js
+# Check if user wants to use serve instead of Express
+if [ "$1" = "--serve" ]; then
+  echo "Starting app with serve..."
+  npx serve -s build --config ./serve.json
+else
+  # Use the Express server by default (which handles both static files and API)
+  echo "Starting app with Express server..."
+  node server.js
+fi
