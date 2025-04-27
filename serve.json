@@ -2,6 +2,9 @@
   "public": "build",
   "cleanUrls": true,
   "trailingSlash": false,
+  "listen": {
+    "host": "0.0.0.0"
+  },
   "rewrites": [
     { "source": "/manifest.json", "destination": "/manifest.json" },
     { "source": "/favicon.ico", "destination": "/favicon.ico" },
@@ -26,6 +29,15 @@
         {
           "key": "Cache-Control", 
           "value": "max-age=3600"
+        }
+      ]
+    },
+    {
+      "source": "**",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
         }
       ]
     }

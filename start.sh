@@ -57,17 +57,27 @@ fi
 # Set production environment
 export NODE_ENV=production
 
+# Get the local IP address (platform-independent)
+IP_ADDRESS=$(hostname -I | awk '{print $1}')
+
 # Print configuration for debugging
 echo "Configuration:"
 echo "  NODE_ENV: $NODE_ENV" 
 echo "  PORT: ${PORT:-5000}"
+echo "  IP ADDRESS: ${IP_ADDRESS}"
+echo ""
+echo "Access the app on your network at:"
+echo "  http://${IP_ADDRESS}:${PORT:-5000}"
 
 # Check if user wants to use serve instead of Express
 if [ "$1" = "--serve" ]; then
   echo "Starting app with serve..."
-  npx serve -s build --config ./serve.json
+  # Pass the host option to serve to bind to all interfaces
+  npx serve -s build --config ./serve.json --listen ${PORT:-3000} --no-clipboard
 else
   # Use the Express server by default (which handles both static files and API)
   echo "Starting app with Express server..."
+  # HOST environment variable will be used by Express if defined
+  export HOST="0.0.0.0"
   node server.js
 fi

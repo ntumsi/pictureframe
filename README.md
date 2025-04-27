@@ -291,14 +291,46 @@ In production mode:
 
 To access the application from other devices on your network:
 
-1. Find your device's IP address:
+1. Make sure your application is running in production mode with the proper network binding:
 ```
-hostname -I
+./start.sh
+```
+Or for using the static server:
+```
+./start.sh --serve
 ```
 
-2. Access the application using `http://YOUR_IP_ADDRESS:5000` 
+2. The script will automatically display your network IP address in the console output.
 
-3. Use this method to upload and manage your pictures from any device on your network
+3. From other devices on the same network, access the application using:
+   - Express server: `http://YOUR_IP_ADDRESS:5000`
+   - Static server: `http://YOUR_IP_ADDRESS:3000` (default port for serve)
+
+4. If you're using a custom port (set through PORT environment variable), make sure to use that port instead:
+```
+PORT=8080 ./start.sh
+```
+
+5. If your device has a firewall, make sure ports 5000 (for Express) and 3000 (for serve) are allowed.
+
+### Troubleshooting Network Access
+
+If devices cannot access the application:
+
+1. Check if your device has a firewall blocking inbound connections on the app ports
+   - For Linux: `sudo ufw status` or `sudo iptables -L`
+   - For Windows: Check Windows Firewall settings
+
+2. Verify the server is binding to all interfaces (0.0.0.0) and not just localhost:
+   - Run `ss -tulpn | grep -E ':(5000|3000)'`
+   - Look for `*:5000` (or your custom port) indicating it's listening on all interfaces
+
+3. If using a router with client isolation enabled, disable this feature to allow devices to communicate
+
+4. Test local connectivity with curl:
+   ```
+   curl http://localhost:5000/api/images
+   ```
 
 ## Display Configuration
 

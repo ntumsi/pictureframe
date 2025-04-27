@@ -374,7 +374,25 @@ if (isProduction || hasBuildFolder) {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Access the app at http://localhost:${PORT}`);
+// Bind to all network interfaces (0.0.0.0) to allow external access
+const HOST = process.env.HOST || '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
+  console.log(`Server running on ${HOST}:${PORT}`);
+  console.log(`Local access: http://localhost:${PORT}`);
+  
+  // Try to get the machine's IP address for LAN access
+  try {
+    const networkInterfaces = require('os').networkInterfaces();
+    const lanIp = Object.values(networkInterfaces)
+      .flat()
+      .filter(details => details.family === 'IPv4' && !details.internal)
+      .map(details => details.address)[0];
+    
+    if (lanIp) {
+      console.log(`Network access: http://${lanIp}:${PORT}`);
+    }
+  } catch (err) {
+    console.log('Could not determine network IP address');
+  }
 });
