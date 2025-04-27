@@ -1,5 +1,5 @@
 {
-  "public": "build",
+  "public": ".",
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
