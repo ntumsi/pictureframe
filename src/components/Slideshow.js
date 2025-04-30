@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getAllImages } from '../api/imageService';
+import Calendar from './Calendar';
 import '../styles/Slideshow.css';
 
 const Slideshow = () => {
@@ -164,6 +165,9 @@ const Slideshow = () => {
             />
           </>
         )}
+        
+        {/* Calendar overlay in the lower right corner */}
+        <Calendar />
       </div>
       
       {showControls && (
