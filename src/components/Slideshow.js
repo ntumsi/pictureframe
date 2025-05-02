@@ -17,14 +17,7 @@ const Slideshow = () => {
     const fetchImages = async () => {
       try {
         setIsLoading(true);
-        console.log('Slideshow: Fetching images...');
         const fetchedImages = await getAllImages();
-        console.log('Slideshow: Images fetched:', fetchedImages);
-        
-        if (fetchedImages.length === 0) {
-          console.log('Slideshow: No images returned from API');
-        }
-        
         setImages(fetchedImages);
         setIsLoading(false);
       } catch (err) {
@@ -137,11 +130,6 @@ const Slideshow = () => {
     );
   }
 
-  console.log('Slideshow rendering with images:', images.length);
-  if (images.length > 0) {
-    console.log('Current image:', currentIndex, images[currentIndex]);
-    console.log('Image URL:', images[currentIndex].url);
-  }
   
   return (
     <div className="slideshow-container">
@@ -152,11 +140,7 @@ const Slideshow = () => {
               src={images[currentIndex].fullUrl || images[currentIndex].url} 
               alt={images[currentIndex].name} 
               className="slideshow-image"
-              onLoad={() => console.log('Image loaded successfully')}
               onError={(e) => {
-                console.error('Error loading image:', e, images[currentIndex].url);
-                // Log the URL for debugging
-                console.log('URL being used:', images[currentIndex].url);
                 // Try to recover by advancing to the next image after a short delay
                 setTimeout(() => {
                   setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
