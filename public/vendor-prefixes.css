@@ -3,40 +3,59 @@
  * This handles the warnings from React and its dependencies using -ms-high-contrast
  */
 
-/* Map -ms-high-contrast to modern forced-colors */
-@media (-ms-high-contrast: active), (-ms-high-contrast: none) {
-  /* Map deprecated feature to modern system color keywords */
-  button, input, a, select {
-    -ms-high-contrast-adjust: auto;
-    background-color: ButtonFace;
-    color: ButtonText;
-    border-color: ButtonText;
-  }
-
-  img, video, canvas {
-    -ms-high-contrast-adjust: none;
-  }
-
-  /* Explicitly override all React components that might use -ms-high-contrast */
-  [class^="react-"], [class*=" react-"] {
-    -ms-high-contrast-adjust: auto !important;
-  }
+/* Critical! Override the deprecated APIs at the :root level with empty rules */
+:root {
+  -ms-high-contrast-adjust: none !important;
 }
 
-/* Forced colors mode proper implementation */
-@media (forced-colors: active) {
-  /* Force system colors for all controls */
-  button, 
-  input, 
-  select, 
-  a {
-    forced-color-adjust: auto;
-  }
+/* Override the document level */
+@-ms-viewport {
+  -ms-high-contrast-adjust: none !important;
+}
 
-  /* Allow images to display with natural colors */
-  img, 
-  video, 
-  canvas {
-    forced-color-adjust: none;
+html, body {
+  -ms-high-contrast-adjust: none !important;
+}
+
+* {
+  -ms-high-contrast: none !important; /* Forcefully disable property */
+  -ms-high-contrast-adjust: none !important; /* Forcefully disable property */
+}
+
+/* Neutralize all deprecated media queries with empty rulesets */
+@media (-ms-high-contrast: active) {}
+@media (-ms-high-contrast: none) {}
+@media (-ms-high-contrast: black-on-white) {}
+@media (-ms-high-contrast: white-on-black) {}
+
+/* Use !important on all modern replacements to enforce precedence */
+@media (forced-colors: active) {
+  :root {
+    forced-color-adjust: auto !important;
+  }
+  
+  /* Handle all core HTML elements */
+  a, button, input, select, textarea, img, svg, canvas, video {
+    forced-color-adjust: auto !important;
+  }
+  
+  /* Allow media to display with natural colors */
+  img, video, canvas, .slideshow-image {
+    forced-color-adjust: none !important;
+  }
+  
+  /* Target specific React components and our app components */
+  [class^="react-"], [class*=" react-"],
+  .slideshow-container, .image-container {
+    forced-color-adjust: auto !important;
+  }
+  
+  /* Specific slideshow adjustments */
+  .slideshow-container {
+    forced-color-adjust: none !important;
+  }
+  
+  .calendar-overlay {
+    forced-color-adjust: auto !important;
   }
 }

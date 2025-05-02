@@ -5,10 +5,17 @@
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Picture Frame - Digital Photo Slideshow"
-    />
+    <meta name="description" content="Picture Frame - Digital Photo Slideshow" />
+    <meta http-equiv="x-ua-compatible" content="IE=edge" />
+    <!-- Meta tags to silence high contrast mode deprecation warnings -->
+    <meta name="ms-high-contrast-adjust" content="none" />
+    <meta name="forced-colors" content="active" />
+    <meta http-equiv="origin-trial" content="disable-ms-high-contrast" />
+    
+    <!-- Critical: Load vendor prefix overrides as early as possible -->
+    <link rel="stylesheet" href="/vendor-prefixes.css" />
+    <!-- JavaScript to suppress high-contrast mode warnings -->
+    <script src="/dummy-high-contrast.js"></script>
     <link rel="apple-touch-icon" href="/logo192.png" />
     <!--
       manifest.json provides metadata used when your web app is installed on a
@@ -24,8 +31,6 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <!-- Vendor prefix overrides to suppress deprecation warnings -->
-    <link rel="stylesheet" href="/vendor-prefixes.css" />
     <title>Picture Frame</title>
   </head>
   <body>
