@@ -13,7 +13,9 @@ This guide describes the deployment workflow for the Picture Frame application. 
 
 ## Deployment Process
 
-### Standard Deployment (Express Server)
+### Quick Deployment (Single Command)
+
+This will build the app and start it in production mode:
 
 ```bash
 # Make sure you're on the main branch
@@ -22,11 +24,28 @@ git checkout main
 # Pull the latest changes
 git pull origin main
 
-# Build the app and start the server
+# Build and deploy in a single command
+npm run deploy
+```
+
+### Standard Deployment (Express Server Only)
+
+If you've already built the app and just want to start the server:
+
+```bash
+# Make sure you're on the main branch
+git checkout main
+
+# Pull the latest changes
+git pull origin main
+
+# Start the server (uses a single Express server for both API and static files)
 npm run production
 ```
 
 ### Dual Server Deployment (Recommended for Raspberry Pi)
+
+This starts two servers: Express for the API and serve for static content:
 
 ```bash
 # Make sure you're on the main branch
@@ -68,7 +87,11 @@ After=network.target
 Type=simple
 User=<your-username>
 WorkingDirectory=/path/to/pictureframe
-ExecStart=/bin/bash /path/to/pictureframe/start.sh --serve
+# Choose one of these ExecStart lines:
+# 1. For single server mode (Express only):
+ExecStart=/bin/bash /path/to/pictureframe/start.sh
+# 2. For dual server mode (recommended for Raspberry Pi):
+# ExecStart=/bin/bash /path/to/pictureframe/start.sh --serve
 Restart=on-failure
 
 [Install]

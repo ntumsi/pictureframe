@@ -4,6 +4,7 @@ echo "Starting Picture Frame app..."
 
 # Make sure uploads directory exists
 mkdir -p ./public/uploads
+echo "Created uploads directory in public/"
 
 # Check if app is built
 if [ ! -d "./build" ]; then
@@ -71,23 +72,18 @@ echo "  NODE_ENV: $NODE_ENV"
 echo "  PORT: ${PORT:-5000}"
 echo "  IP ADDRESS: ${IP_ADDRESS}"
 echo ""
-echo "Access the app on your network at:"
-if [ "$1" = "--serve" ]; then
-  # In serve mode, use port 3000 for static content
-  echo "  Static content: http://${IP_ADDRESS}:3000"
-  echo "  API server: http://${IP_ADDRESS}:${PORT:-5000}"
-else
-  # In Express mode, everything is on the same port
-  echo "  http://${IP_ADDRESS}:${PORT:-5000}"
-fi
 
-# Check if user wants to use serve instead of Express
+# Check if user wants to use dual server mode
 if [ "$1" = "--serve" ]; then
-  echo "Starting app with serve for static content and Express for API..."
-  # We need both servers for serve mode
+  echo "Starting app with dual server mode (Express + serve)..."
+  # We need both servers for dual-server mode
   
   API_PORT="${PORT:-5000}"
   STATIC_PORT="3000"
+  
+  echo "Access the app on your network at:"
+  echo "  Main UI: http://${IP_ADDRESS}:$STATIC_PORT"
+  echo "  API server: http://${IP_ADDRESS}:$API_PORT"
   
   # Start Express API server in the background
   echo "Starting Express API server on port $API_PORT..."
@@ -107,6 +103,9 @@ if [ "$1" = "--serve" ]; then
     echo "WARNING: API server may not have started properly"
   fi
   
+  # Save the EXPRESS_PID to a file for outside reference
+  echo $EXPRESS_PID > .express.pid
+  
   # Try both locations for the config file
   CONFIG_PATH="$(pwd)/serve.json"
   
@@ -115,25 +114,27 @@ if [ "$1" = "--serve" ]; then
     echo "Using config from: $CONFIG_PATH"
     echo "Listening on port: $STATIC_PORT (all interfaces)"
     
+    # Trap exit to ensure we clean up API server
+    trap 'echo "Shutting down Express server..."; kill $(cat .express.pid) 2>/dev/null; rm .express.pid' EXIT
+    
     # For serve 14.x, just specify the port
     cd build && npx serve --config "$CONFIG_PATH" --listen "$STATIC_PORT" --no-clipboard
-    
-    # When serve exits, kill the API server
-    echo "Static server stopped, shutting down API server..."
-    kill $EXPRESS_PID
   else
     echo "Config file not found at $CONFIG_PATH"
     echo "Using built-in configuration"
+    
+    # Trap exit to ensure we clean up API server
+    trap 'echo "Shutting down Express server..."; kill $(cat .express.pid) 2>/dev/null; rm .express.pid' EXIT
+    
     # Fallback to built-in configuration
     cd build && npx serve --listen "$STATIC_PORT" --no-clipboard
-    
-    # When serve exits, kill the API server
-    echo "Static server stopped, shutting down API server..."
-    kill $EXPRESS_PID
   fi
 else
   # Use the Express server by default (which handles both static files and API)
-  echo "Starting app with Express server..."
+  echo "Starting app with single Express server mode..."
+  echo "Access the app on your network at:"
+  echo "  http://${IP_ADDRESS}:${PORT:-5000}"
+  
   # HOST environment variable will be used by Express if defined
   export HOST="0.0.0.0"
   node server.js
