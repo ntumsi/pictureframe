@@ -4,7 +4,6 @@ echo "Starting Picture Frame app..."
 
 # Make sure uploads directory exists
 mkdir -p ./public/uploads
-echo "Created uploads directory in public/"
 
 # Check if app is built
 if [ ! -d "./build" ]; then
@@ -13,37 +12,129 @@ if [ ! -d "./build" ]; then
   npm run build
 fi
 
-# Make sure the build/uploads directory exists
-echo "Setting up uploads directory in build folder..."
-mkdir -p ./build/uploads
-echo "Created uploads directory in build/"
+echo "Using build folder"
 
-# Copy files from public/uploads to build/uploads to ensure they're available
-echo "Copying images from public/uploads to build/uploads..."
-cp -r ./public/uploads/* ./build/uploads/ 2>/dev/null || echo "No files to copy (this is normal for first run)"
+# ALWAYS recreate the uploads symlink to ensure it's correct
+echo "Setting up uploads folder symlink..."
+if [ -d "./build" ]; then
+  # First remove the directory or symlink if it exists
+  if [ -e "./build/uploads" ]; then
+    echo "Removing existing uploads directory or symlink in build folder..."
+    rm -rf ./build/uploads
+  fi
+  
+  # Now create a fresh symlink
+  echo "Creating fresh symlink for uploads folder..."
+  ln -sf ../public/uploads ./build/uploads
+  
+  # Verify it was created correctly
+  if [ -L "./build/uploads" ]; then
+    echo "Symlink created successfully"
+  else
+    echo "WARNING: Failed to create symlink!"
+  fi
+  
+  # Also ensure serve.json is in the build directory
+  echo "Ensuring serve.json is in the build directory..."
+  cp -f "./serve.json" "./build/serve.json"
+  echo "serve.json copied to build directory"
+fi
 
-# Show the contents of both directories for verification
-echo "Contents of public/uploads:"
-ls -la ./public/uploads/
-echo "Contents of build/uploads:"
-ls -la ./build/uploads/
+# Also make sure any existing copied uploads in build are properly linked
+if [ -d "./build" ] && [ -d "./public/uploads" ]; then
+  echo "Checking for images in build/uploads directory..."
+  
+  # Handle the find command properly with better syntax for multiple patterns
+  find ./build/uploads -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.gif" -o -name "*.webp" \) 2>/dev/null | \
+  while read file; do
+    filename=$(basename "$file")
+    if [ ! -f "./public/uploads/$filename" ]; then
+      echo "Copying $filename to public/uploads..."
+      cp "$file" "./public/uploads/"
+    fi
+  done
+  
+  # Also verify the file permissions
+  echo "Ensuring proper file permissions..."
+  find ./public/uploads -type f -exec chmod 644 {} \;
+fi
 
-# Always use the Express server (which handles both static files and API)
-echo "Starting app with Express server..."
-
-# Force consistent environment variables
-export REACT_APP_API_URL=http://localhost:5000/api
+# Set production environment
 export NODE_ENV=production
-export PORT=5000
+
+# Get the local IP address (platform-independent)
+IP_ADDRESS=$(hostname -I | awk '{print $1}')
 
 # Print configuration for debugging
 echo "Configuration:"
-echo "  NODE_ENV: $NODE_ENV"
-echo "  REACT_APP_API_URL: $REACT_APP_API_URL"
-echo "  PORT: $PORT"
-echo "  Server URL: http://localhost:$PORT"
-echo "  API URL: $REACT_APP_API_URL"
-echo "  Uploads Path: $(pwd)/public/uploads"
+echo "  NODE_ENV: $NODE_ENV" 
+echo "  PORT: ${PORT:-5000}"
+echo "  IP ADDRESS: ${IP_ADDRESS}"
+echo ""
+echo "Access the app on your network at:"
+if [ "$1" = "--serve" ]; then
+  # In serve mode, use port 3000 for static content
+  echo "  Static content: http://${IP_ADDRESS}:3000"
+  echo "  API server: http://${IP_ADDRESS}:${PORT:-5000}"
+else
+  # In Express mode, everything is on the same port
+  echo "  http://${IP_ADDRESS}:${PORT:-5000}"
+fi
 
-# Start the server
-node server.js
+# Check if user wants to use serve instead of Express
+if [ "$1" = "--serve" ]; then
+  echo "Starting app with serve for static content and Express for API..."
+  # We need both servers for serve mode
+  
+  API_PORT="${PORT:-5000}"
+  STATIC_PORT="3000"
+  
+  # Start Express API server in the background
+  echo "Starting Express API server on port $API_PORT..."
+  export HOST="0.0.0.0"
+  export PORT="$API_PORT"
+  node server.js &
+  EXPRESS_PID=$!
+  echo "Express API server started with PID $EXPRESS_PID"
+  
+  # Give the API server a moment to start
+  sleep 2
+  
+  # Verify the API server is running
+  if kill -0 $EXPRESS_PID 2>/dev/null; then
+    echo "API server running on port $API_PORT"
+  else
+    echo "WARNING: API server may not have started properly"
+  fi
+  
+  # Try both locations for the config file
+  CONFIG_PATH="$(pwd)/serve.json"
+  
+  echo "Starting static server on port $STATIC_PORT..."
+  if [ -f "$CONFIG_PATH" ]; then
+    echo "Using config from: $CONFIG_PATH"
+    echo "Listening on port: $STATIC_PORT (all interfaces)"
+    
+    # For serve 14.x, just specify the port
+    cd build && npx serve --config "$CONFIG_PATH" --listen "$STATIC_PORT" --no-clipboard
+    
+    # When serve exits, kill the API server
+    echo "Static server stopped, shutting down API server..."
+    kill $EXPRESS_PID
+  else
+    echo "Config file not found at $CONFIG_PATH"
+    echo "Using built-in configuration"
+    # Fallback to built-in configuration
+    cd build && npx serve --listen "$STATIC_PORT" --no-clipboard
+    
+    # When serve exits, kill the API server
+    echo "Static server stopped, shutting down API server..."
+    kill $EXPRESS_PID
+  fi
+else
+  # Use the Express server by default (which handles both static files and API)
+  echo "Starting app with Express server..."
+  # HOST environment variable will be used by Express if defined
+  export HOST="0.0.0.0"
+  node server.js
+fi

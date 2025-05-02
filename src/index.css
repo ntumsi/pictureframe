@@ -14,12 +14,34 @@ code {
 
 /* Modern forced colors mode equivalents to replace deprecated -ms-high-contrast */
 @media (forced-colors: active) {
-  /* Add forced colors mode overrides here */
+  /* Enhanced forced colors mode overrides */
   .slideshow-image {
     forced-color-adjust: none;
   }
   
   button, a {
     forced-color-adjust: auto;
+  }
+  
+  /* Fix for high contrast mode */
+  .nav-button,
+  .fullscreen-button,
+  .manage-link,
+  .upload-button,
+  .select-all,
+  .delete-selected,
+  .delete-button {
+    forced-color-adjust: none;
+    border: 1px solid transparent;
+  }
+  
+  /* Ensure proper contrast for UI elements */
+  .image-overlay {
+    forced-color-adjust: none;
+  }
+  
+  /* Ensure checkmark is visible */
+  .checkmark {
+    forced-color-adjust: none;
   }
 }

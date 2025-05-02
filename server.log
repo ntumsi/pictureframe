@@ -1,0 +1,9 @@
+
+> pictureframe@0.1.0 server
+> NODE_ENV=production node server.js
+
+Server starting in production mode with PID 11174
+Serving static files from build folder
+Server running on port 5000
+Access the app at http://localhost:5000
+Killed

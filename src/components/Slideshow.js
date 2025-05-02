@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getAllImages } from '../api/imageService';
+import Calendar from './Calendar';
 import '../styles/Slideshow.css';
 
 const Slideshow = () => {
@@ -16,14 +17,7 @@ const Slideshow = () => {
     const fetchImages = async () => {
       try {
         setIsLoading(true);
-        console.log('Slideshow: Fetching images...');
         const fetchedImages = await getAllImages();
-        console.log('Slideshow: Images fetched:', fetchedImages);
-        
-        if (fetchedImages.length === 0) {
-          console.log('Slideshow: No images returned from API');
-        }
-        
         setImages(fetchedImages);
         setIsLoading(false);
       } catch (err) {
@@ -136,36 +130,27 @@ const Slideshow = () => {
     );
   }
 
-  console.log('Slideshow rendering with images:', images.length);
-  if (images.length > 0) {
-    console.log('Current image:', currentIndex, images[currentIndex]);
-    console.log('Image URL:', images[currentIndex].url);
-  }
-  
   return (
     <div className="slideshow-container">
       <div className="slideshow">
         {images.length > 0 && (
           <>
             <img 
-              src={images[currentIndex].url} 
+              src={images[currentIndex].fullUrl || images[currentIndex].url} 
               alt={images[currentIndex].name} 
               className="slideshow-image"
-              onLoad={() => console.log('Image loaded successfully:', images[currentIndex].url)}
               onError={(e) => {
-                console.error('Error loading image:', e, images[currentIndex].url);
-                // Log for debugging
-                console.log('Failed URL:', images[currentIndex].url);
+                // Try to recover by advancing to the next image after a short delay
+                setTimeout(() => {
+                  setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+                }, 2000);
               }}
             />
-            {/* Show debug info only in development or when debug flag is set */}
-            {(process.env.NODE_ENV === 'development' || process.env.REACT_APP_SHOW_DEBUG === 'true') && (
-              <div style={{ position: 'absolute', bottom: '50px', left: '10px', background: 'rgba(0,0,0,0.5)', color: 'white', padding: '5px', fontSize: '12px' }}>
-                Debug: {images[currentIndex].url}
-              </div>
-            )}
           </>
         )}
+        
+        {/* Calendar overlay in the lower right corner */}
+        <Calendar />
       </div>
       
       {showControls && (

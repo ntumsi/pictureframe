@@ -182,11 +182,14 @@ const ManageImages = () => {
                   onClick={() => toggleImageSelection(image.id)}
                 >
                   <img 
-                    src={image.url} 
+                    src={image.fullUrl || image.url}
                     alt={image.name} 
                     onError={(e) => {
                       console.error('Error loading image in ManageImages:', e, image.url);
-                      console.log('Failed URL:', image.url);
+                      console.log('URL being used:', image.url);
+                      // Add fallback image or placeholder
+                      e.target.src = '/logo192.png'; // Use React logo as fallback
+                      e.target.style.opacity = '0.5'; // Make it clear it's a placeholder
                     }}
                   />
                   <div className="image-overlay">

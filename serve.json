@@ -1,5 +1,4 @@
 {
-  "public": "build",
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
@@ -26,6 +25,15 @@
         {
           "key": "Cache-Control", 
           "value": "max-age=3600"
+        }
+      ]
+    },
+    {
+      "source": "**",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
         }
       ]
     }

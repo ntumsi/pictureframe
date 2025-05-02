@@ -4,13 +4,16 @@ A full-stack React application for displaying images in a slideshow format, perf
 
 ## Features
 
-- Fullscreen slideshow mode with auto-advancing images
+- Fullscreen slideshow mode with auto-advancing images (10 second intervals)
 - Image management interface for adding and deleting pictures
-- Drag-and-drop file uploads
-- Bulk delete functionality
+- Drag-and-drop file uploads with support for JPEG, PNG, GIF, and WebP formats
+- Bulk delete functionality with multi-select capabilities
 - Keyboard navigation (arrow keys to navigate, 'f' to toggle fullscreen)
-- Responsive design
+- Auto-hide controls that appear on mouse movement
+- Responsive design for various display sizes
 - Network access to upload/delete pictures over your local network
+- Built-in fallback mechanisms for image loading failures
+- Automatic image refresh (every 60 seconds)
 
 ## Installation
 
@@ -133,7 +136,7 @@ After=network.target
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/pictureframe
-ExecStart=/usr/bin/bash /home/pi/pictureframe/start.sh serve
+ExecStart=/usr/bin/bash /home/pi/pictureframe/start.sh --serve
 Restart=on-failure
 
 [Install]
@@ -226,6 +229,8 @@ This will start:
 - React frontend on port 3000 (http://localhost:3000)
 - Express backend on port 5000 (http://localhost:5000)
 
+The application is configured to automatically proxy API requests from port 3000 to 5000 in development mode.
+
 ### Production Mode
 
 1. Build the React application:
@@ -235,42 +240,97 @@ npm run build
 
 2. Start the application using one of these methods:
 
-**Method 1: Using Express Server (supports API functionality)**
+**Method 1: Using Express Server (recommended, supports API functionality)**
 ```
 npm run server
 ```
 The application will be accessible at http://localhost:5000.
 
-**Method 2: Using Serve (better for Raspberry Pi, static files only)**
+**Method 2: Using the start script (most reliable option)**
+```
+./start.sh
+```
+This will:
+- Create the uploads directory if it doesn't exist
+- Build the app if needed
+- Set up proper symlinks between public/uploads and build/uploads
+- Start the Express server on port 5000
+
+You can also use Serve instead of Express by adding the `--serve` flag:
+```
+./start.sh --serve
+```
+
+**Method 3: Complete build and server in one command**
+```
+npm run production
+```
+Same as running `npm run build` followed by `npm run server`
+
+**Method 4: Complete build and serve with static server**
+```
+npm run production:serve
+```
+Builds the app and serves it using the serve static server instead of Express.
+
+**Method 5: Using Serve directly (for static serving only)**
 ```
 npm run serve
 ```
-The application will be accessible at http://localhost:3000 by default.
+The application will be accessible at http://localhost:3000 by default, but API functionality will be limited unless you're also running the Express server separately.
 
-**Method 3: All-in-one commands**
-```
-# Build and serve with express
-npm run production
+### How it Works
 
-# Or use the start script with Express
-./start.sh
-
-# Or use the start script with Serve (recommended for Raspberry Pi)
-./start.sh serve
-```
+In production mode:
+1. Express server serves both the static React app and API endpoints from the same origin
+2. Uploads are stored in the `/public/uploads` directory
+3. A symlink connects the build/uploads directory to public/uploads
+4. All API requests use the same host as the webapp, ensuring proper connectivity
 
 ## Accessing on Your Network
 
 To access the application from other devices on your network:
 
-1. Find your device's IP address:
+1. Make sure your application is running in production mode with the proper network binding:
 ```
-hostname -I
+./start.sh
+```
+Or for using the static server:
+```
+./start.sh --serve
 ```
 
-2. Access the application using `http://YOUR_IP_ADDRESS:5000` 
+2. The script will automatically display your network IP address in the console output.
 
-3. Use this method to upload and manage your pictures from any device on your network
+3. From other devices on the same network, access the application using:
+   - Express server: `http://YOUR_IP_ADDRESS:5000`
+   - Static server: `http://YOUR_IP_ADDRESS:3000` (default port for serve)
+
+4. If you're using a custom port (set through PORT environment variable), make sure to use that port instead:
+```
+PORT=8080 ./start.sh
+```
+
+5. If your device has a firewall, make sure ports 5000 (for Express) and 3000 (for serve) are allowed.
+
+### Troubleshooting Network Access
+
+If devices cannot access the application:
+
+1. Check if your device has a firewall blocking inbound connections on the app ports
+   - For Linux: `sudo ufw status` or `sudo iptables -L`
+   - For Windows: Check Windows Firewall settings
+
+2. Verify the server is binding to all interfaces (0.0.0.0) and not just localhost:
+   - Run `ss -tulpn | grep -E ':(5000|3000)'`
+   - Look for `*:5000` (or your custom port) indicating it's listening on all interfaces
+
+3. If using a router with client isolation enabled, disable this feature to allow devices to communicate
+
+4. Test local connectivity with curl:
+   ```
+   curl http://localhost:5000/api/images
+   ```
 
 ## Display Configuration
 
@@ -313,10 +373,63 @@ sudo nano /etc/X11/xorg.conf.d/40-libinput.conf
 
 ## Security Notes
 
-This application has been audited and secured against known vulnerabilities:
+This application has been secured against common vulnerabilities:
 - All dependencies are updated to secure versions
 - Package overrides are in place to ensure transitive dependencies are secure
+- CORS is properly configured for cross-origin requests
+- JSON parsing is handled with proper error handling
+- File uploads are restricted to images with size limits (10MB)
 - Regular security audits are recommended (run `npm audit` periodically)
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Images not displaying**
+   - Ensure the uploads directory exists in the correct location
+   - Check that the symlink between build/uploads and public/uploads is properly created
+   - Verify permissions on the uploads directory (should be readable by the web server)
+   - If using production mode, run `./start.sh` to fix broken symlinks
+
+2. **Upload failures**
+   - Check server logs for specific error messages
+   - Verify the file size is under 10MB
+   - Ensure the file type is supported (JPG, PNG, GIF, WebP)
+
+3. **API connectivity issues**
+   - In development mode: make sure both the frontend and backend servers are running
+   - In production mode: verify the Express server is running on port 5000
+   - Check browser console for CORS errors or network issues
+   - If using `serve` instead of Express, ensure the Express server is also running for API functionality
+
+4. **Cross-device file access**
+   - Ensure your device's firewall allows access to the server port (5000 for Express, 3000 for serve)
+   - Use your device's IP address (not localhost) when accessing from other devices
+
+5. **Production build issues**
+   - The most common issue is broken symlinks between build/uploads and public/uploads
+   - Always run `./start.sh` before serving in production to fix these symlink issues
+   - For comprehensive fix, use `npm run production:serve` or `npm run production`
+
+## Maintenance
+
+### Regular Maintenance Tasks
+
+1. **Clean up uploads directory** 
+   - Periodically remove unwanted images to save space
+   - Use the management interface or delete files directly from the uploads directory
+
+2. **Update dependencies**
+   ```
+   npm update
+   npm audit fix
+   ```
+
+3. **Backup your images**
+   ```
+   # Example backup command
+   cp -r public/uploads /backup/location/
+   ```
 
 ## License
 

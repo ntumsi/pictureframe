@@ -17,46 +17,26 @@ if (!fs.existsSync(UPLOADS_FOLDER)) {
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Ensure uploads folder exists before saving
-    if (!fs.existsSync(UPLOADS_FOLDER)) {
-      console.log(`Creating uploads folder: ${UPLOADS_FOLDER}`);
-      fs.mkdirSync(UPLOADS_FOLDER, { recursive: true });
-    }
-    
     cb(null, UPLOADS_FOLDER);
   },
   filename: (req, file, cb) => {
-    // Use a more reliable filename pattern
-    console.log('Original filename:', file.originalname);
-    const fileExt = path.extname(file.originalname).toLowerCase() || '.jpg';
-    const uuid = uuidv4();
-    console.log(`Generated UUID: ${uuid}, extension: ${fileExt}`);
-    cb(null, `${uuid}${fileExt}`);
+    const fileExt = path.extname(file.originalname);
+    cb(null, `${uuidv4()}${fileExt}`);
   }
 });
 
-// Set up multer with more permissive config
 const upload = multer({
   storage,
-  limits: { 
-    fileSize: 25 * 1024 * 1024, // 25MB limit
-    fieldSize: 25 * 1024 * 1024, // 25MB field size limit
-    files: 5 // Allow up to 5 files at once
-  },
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/i;
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
     
-    console.log('Upload file check:', file.originalname);
-    console.log('Mimetype:', file.mimetype, 'Valid:', mimetype);
-    console.log('Extension:', path.extname(file.originalname).toLowerCase(), 'Valid:', extname);
-    
-    if (extname || mimetype) {
-      // Allow if either the extension or mimetype is valid
+    if (extname && mimetype) {
       return cb(null, true);
     } else {
-      cb(new Error(`Only image files are allowed! Got: ${file.mimetype}`));
+      cb(new Error('Only image files are allowed!'));
     }
   }
 });
@@ -64,43 +44,29 @@ const upload = multer({
 // Log the NODE_ENV for debugging
 console.log(`Server starting in ${process.env.NODE_ENV || 'development'} mode with PID ${process.pid}`);
 
-// Configure CORS to allow requests from other devices on the network
-// Use a more permissive CORS configuration
-app.use(cors({
-  origin: true, // Allow all origins with credentials
-  methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS', 'HEAD', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Client-Debug', 'X-Timestamp', 'Cache-Control', 'Pragma'],
-  exposedHeaders: ['Content-Type', 'X-Server', 'X-Server-PID', 'X-API-Route'],
-  credentials: true,
-  maxAge: 86400 // 24 hours
-}));
+// Configure CORS to allow requests from other devices on the network - simplified version
+app.use(cors());
 
-// Handle preflight requests explicitly
-app.options('*', cors());
-
-// Add server identification header and security headers
+// Add server identification header
 app.use((req, res, next) => {
-  // Server identification
   res.setHeader('X-Server', 'PictureFrame/1.0');
   res.setHeader('X-Server-PID', process.pid);
+  next();
+});
+
+// Let the CORS middleware handle OPTIONS requests automatically
+app.options('*', cors());
+
+// Debug middleware for all API routes - place this BEFORE API routes
+app.use('/api/*', (req, res, next) => {
+  console.log(`API REQUEST: ${req.method} ${req.originalUrl}`);
+  console.log('Headers:', req.headers);
   
-  // Security headers
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  // Make sure this is correctly identified as an API route
+  res.set('X-API-Route', 'true');
   
-  // Suppress console warnings with CSP
-  res.setHeader('Content-Security-Policy', 
-    "default-src 'self'; " +
-    "img-src 'self' data: blob:; " +
-    "style-src 'self' 'unsafe-inline'; " + 
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-    "connect-src 'self' localhost:*; " +
-    "worker-src 'self' blob:; " +
-    "frame-src 'self'; " +
-    "object-src 'none'; " + 
-    "report-uri /api/csp-report"
-  );
+  // Add a specific header to API responses
+  res.set('X-API-Server', 'picture-frame');
   
   next();
 });
@@ -109,14 +75,26 @@ app.use((req, res, next) => {
 app.use(express.json({
   verify: (req, res, buf, encoding) => {
     try {
-      JSON.parse(buf);
+      // Only attempt to parse if there's a body
+      if (buf.length > 0) {
+        JSON.parse(buf);
+      }
     } catch (e) {
       console.error('Invalid JSON received:', e);
-      res.status(400).json({ error: 'Invalid JSON' });
-      throw new Error('Invalid JSON');
+      // Don't throw here as it's difficult to handle properly
+      // Instead, we'll handle malformed JSON in the routes
+      req.invalidJson = true;
     }
   }
 }));
+
+// Middleware to check for invalid JSON after parsing
+app.use((req, res, next) => {
+  if (req.invalidJson) {
+    return res.status(400).json({ error: 'Invalid JSON' });
+  }
+  next();
+});
 
 // Ensure all JSON responses have the correct Content-Type header
 app.use((req, res, next) => {
@@ -128,43 +106,28 @@ app.use((req, res, next) => {
   next();
 });
 
-// Set up static file serving
-console.log('Setting up static file directories...');
+// Always serve the uploads folder
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads'), {
+  // Set these options to ensure proper file serving
+  maxAge: '1d',       // Cache for 1 day
+  etag: true,         // Use ETags for caching
+  lastModified: true, // Send Last-Modified headers
+  fallthrough: true   // Try the next middleware if file not found
+}));
 
-// Make uploads directory the single source of truth for uploaded images
-const uploadsPath = path.join(__dirname, 'public', 'uploads');
-console.log(`Uploads directory: ${uploadsPath} (exists: ${fs.existsSync(uploadsPath)})`);
-
-// Serve uploads directory from all possible paths to ensure they're always accessible
-app.use('/uploads', express.static(uploadsPath));
-app.use('/public/uploads', express.static(uploadsPath));
-app.use('/build/uploads', express.static(uploadsPath));
-app.use('/api/uploads', express.static(uploadsPath));
-
-// Log static routes for debugging
-console.log('Image URLs will be accessible at:');
-console.log('- /uploads/[filename]');
-console.log('- /public/uploads/[filename]');
-console.log('- /build/uploads/[filename]');
-console.log('- /api/uploads/[filename]');
-
-// Serve static files from public and build folders
+// Always serve some common static files from public folder
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Check if build folder exists and determine environment
-const buildPath = path.join(__dirname, 'build');
-const hasBuildFolder = fs.existsSync(buildPath);
-
-// Get environment from NODE_ENV but use consistent behavior
+// Setup for production mode
 const isProduction = process.env.NODE_ENV === 'production';
+const hasBuildFolder = fs.existsSync(path.join(__dirname, 'build'));
 
-console.log(`Environment: ${process.env.NODE_ENV}`);
-console.log(`Build folder exists: ${hasBuildFolder}`);
-console.log(`Using production mode: ${isProduction}`);
-
-if (hasBuildFolder) {
-  console.log(`Serving static files from build folder: ${buildPath}`);
-  app.use(express.static(buildPath));
+// If we're in production mode OR the build folder exists, serve files from build
+if (isProduction || hasBuildFolder) {
+  console.log('Serving static files from build folder');
+  
+  // Serve static files from the React build folder
+  app.use(express.static(path.join(__dirname, 'build')));
   
   // Handle common static files that might get 404 errors
   const staticFiles = [
@@ -227,12 +190,20 @@ app.get('/api/images', (req, res) => {
       const imageFiles = files.filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file));
       console.log('Image files found:', imageFiles);
       
+      // Get base URL for images
+      const protocol = req.secure ? 'https' : 'http';
+      const host = req.headers.host;
+      const baseUrl = `${protocol}://${host}`;
+      
       const images = imageFiles.map(file => {
+        const urlPath = `/uploads/${file}`;
+        
         const imageObject = {
           id: path.parse(file).name,
           name: file,
-          path: `/uploads/${file}`,
-          url: `/uploads/${file}`
+          path: urlPath,
+          url: urlPath, // Keep relative path as primary URL
+          fullUrl: `${baseUrl}${urlPath}` // Also provide the full URL as an option
         };
         
         // Verify each image exists
@@ -253,17 +224,10 @@ app.get('/api/images', (req, res) => {
   }
 });
 
-// Upload image - separated into its own route
+// Upload image
 app.post('/api/upload', (req, res) => {
   console.log('API request received: POST /api/upload');
   console.log('Request headers:', req.headers);
-  console.log('Content-Type:', req.headers['content-type']);
-  
-  // Set appropriate headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With');
-  res.setHeader('Content-Type', 'application/json');
   
   try {
     // Ensure uploads folder exists
@@ -275,73 +239,49 @@ app.post('/api/upload', (req, res) => {
     console.log('Uploads folder path:', UPLOADS_FOLDER);
     console.log('Uploads folder exists:', fs.existsSync(UPLOADS_FOLDER));
     
-    // Handle non-multipart requests
-    if (!req.headers['content-type'] || !req.headers['content-type'].includes('multipart/form-data')) {
-      console.warn('Upload request has incorrect Content-Type:', req.headers['content-type']);
-      return res.status(400).json({ 
-        error: 'Content-Type must be multipart/form-data',
-        received: req.headers['content-type'] || 'undefined'
-      });
-    }
-    
     // Use multer middleware with error handling
     upload.single('image')(req, res, (err) => {
       if (err) {
-        console.error('Error processing upload:', err);
-        // Handle multer errors
-        if (err instanceof multer.MulterError) {
-          // A multer error occurred
-          if (err.code === 'LIMIT_FILE_SIZE') {
-            return res.status(413).json({ error: 'File too large (max 25MB)' });
-          }
-          return res.status(400).json({ error: `Upload error: ${err.code}` });
-        }
-        
+        console.error('Error uploading file:', err);
         return res.status(400).json({ error: err.message });
       }
       
-      console.log('Upload processed');
-      
-      // Check if file was provided
       if (!req.file) {
-        console.warn('No file found in request');
-        return res.status(400).json({ error: 'No image found in request' });
+        console.warn('No file in upload request');
+        return res.status(400).json({ error: 'No image uploaded' });
       }
       
       // Get the file details
+      const urlPath = `/uploads/${req.file.filename}`;
+      
+      // Build full URL
+      const protocol = req.secure ? 'https' : 'http';
+      const host = req.headers.host;
+      const baseUrl = `${protocol}://${host}`;
+      
       const fileDetails = {
         id: path.parse(req.file.filename).name,
         name: req.file.filename,
-        path: `/uploads/${req.file.filename}`,
-        url: `/uploads/${req.file.filename}`
+        path: urlPath,
+        url: urlPath,
+        fullUrl: `${baseUrl}${urlPath}`
       };
       
       console.log(`File uploaded successfully: ${req.file.filename}`);
       console.log('File details:', fileDetails);
-      console.log('File size:', req.file.size);
       console.log('File saved to:', req.file.path);
       
-      // Verify the file exists and is accessible
+      // Verify the file exists
       const fullPath = path.join(UPLOADS_FOLDER, req.file.filename);
-      const fileExists = fs.existsSync(fullPath);
       console.log('Full file path:', fullPath);
-      console.log('File exists:', fileExists);
+      console.log('File exists:', fs.existsSync(fullPath));
       
-      if (!fileExists) {
-        return res.status(500).json({ 
-          error: 'File was not saved correctly',
-          path: fullPath
-        });
-      }
-      
-      res.status(200).json(fileDetails);
+      res.setHeader('Content-Type', 'application/json');
+      res.json(fileDetails);
     });
   } catch (error) {
     console.error('Unexpected error in /api/upload:', error);
-    res.status(500).json({ 
-      error: 'Server error during upload',
-      message: error.message
-    });
+    res.status(500).json({ error: 'Server error during upload' });
   }
 });
 
@@ -384,33 +324,7 @@ app.delete('/api/images/:id', (req, res) => {
   }
 });
 
-// IMPORTANT: Place API routes BEFORE the catch-all route
-// Make sure all API routes are defined before this section
-
-// Add CSP report endpoint
-app.post('/api/csp-report', (req, res) => {
-  // Log CSP violations but don't take action
-  if (req.body) {
-    console.log('CSP Violation:', req.body);
-  } else {
-    console.log('CSP Violation report with no data');
-  }
-  res.status(204).end();
-});
-
-// Debug middleware for all API routes
-app.use('/api/*', (req, res, next) => {
-  console.log(`API REQUEST: ${req.method} ${req.originalUrl}`);
-  console.log('Headers:', req.headers);
-  
-  // Make sure this is correctly identified as an API route
-  res.set('X-API-Route', 'true');
-  
-  // Add a specific header to API responses
-  res.set('X-API-Server', 'picture-frame');
-  
-  next();
-});
+// IMPORTANT: API routes are defined below
 
 // Serve the React app for any other routes when build folder exists
 if (isProduction || hasBuildFolder) {
@@ -460,7 +374,25 @@ if (isProduction || hasBuildFolder) {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Access the app at http://localhost:${PORT}`);
+// Bind to all network interfaces (0.0.0.0) to allow external access
+const HOST = process.env.HOST || '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
+  console.log(`Server running on ${HOST}:${PORT}`);
+  console.log(`Local access: http://localhost:${PORT}`);
+  
+  // Try to get the machine's IP address for LAN access
+  try {
+    const networkInterfaces = require('os').networkInterfaces();
+    const lanIp = Object.values(networkInterfaces)
+      .flat()
+      .filter(details => details.family === 'IPv4' && !details.internal)
+      .map(details => details.address)[0];
+    
+    if (lanIp) {
+      console.log(`Network access: http://${lanIp}:${PORT}`);
+    }
+  } catch (err) {
+    console.log('Could not determine network IP address');
+  }
 });
