@@ -28,9 +28,11 @@ git pull origin main
 npm run deploy
 ```
 
-### Standard Deployment (Express Server Only)
+### Standard Deployment (Dual Server Mode - Recommended)
 
-If you've already built the app and just want to start the server:
+This will start:
+- Express server on port 5000 for the API
+- Static serve on port 3000 for the frontend
 
 ```bash
 # Make sure you're on the main branch
@@ -39,13 +41,13 @@ git checkout main
 # Pull the latest changes
 git pull origin main
 
-# Start the server (uses a single Express server for both API and static files)
+# Start both servers (frontend on port 3000, backend on port 5000)
 npm run production
 ```
 
-### Dual Server Deployment (Recommended for Raspberry Pi)
+### Single Server Deployment (Express Only - Not Recommended)
 
-This starts two servers: Express for the API and serve for static content:
+This uses only the Express server for both API and static files (only use if dual server mode is not working):
 
 ```bash
 # Make sure you're on the main branch
@@ -54,8 +56,8 @@ git checkout main
 # Pull the latest changes
 git pull origin main
 
-# Start with dual server mode (serve for static content, Express for API)
-npm run dual
+# Start with single server mode (Express only)
+npm run express-only
 ```
 
 ### Testing Network Access
@@ -87,11 +89,8 @@ After=network.target
 Type=simple
 User=<your-username>
 WorkingDirectory=/path/to/pictureframe
-# Choose one of these ExecStart lines:
-# 1. For single server mode (Express only):
-ExecStart=/bin/bash /path/to/pictureframe/start.sh
-# 2. For dual server mode (recommended for Raspberry Pi):
-# ExecStart=/bin/bash /path/to/pictureframe/start.sh --serve
+# Always use dual server mode for reliable operation
+ExecStart=/bin/bash /path/to/pictureframe/start.sh --serve
 Restart=on-failure
 
 [Install]
