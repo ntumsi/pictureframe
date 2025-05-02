@@ -2,6 +2,10 @@
 
 A full-stack React application for displaying images in a slideshow format, perfect for digital picture frames. The app allows users to upload, view, and delete images through a web interface.
 
+[![Deploy from Main](https://img.shields.io/badge/deploy-from%20main-blue.svg)](./DEPLOY.md)
+
+> **IMPORTANT**: All deployments should be made from the `main` branch. See [deployment documentation](./DEPLOY.md) for details.
+
 ## Features
 
 - Fullscreen slideshow mode with auto-advancing images (10 second intervals)
