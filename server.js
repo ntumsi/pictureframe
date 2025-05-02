@@ -44,8 +44,14 @@ const upload = multer({
 // Log the NODE_ENV for debugging
 console.log(`Server starting in ${process.env.NODE_ENV || 'development'} mode with PID ${process.pid}`);
 
-// Configure CORS to allow requests from other devices on the network - simplified version
-app.use(cors());
+// Configure CORS to allow requests from other devices on the network
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow any origin - more permissive for dual-server mode
+    callback(null, true);
+  },
+  credentials: false // Don't send the Access-Control-Allow-Credentials header
+}));
 
 // Add server identification header
 app.use((req, res, next) => {

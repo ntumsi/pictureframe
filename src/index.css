@@ -12,7 +12,7 @@ code {
     monospace;
 }
 
-/* Modern forced colors mode equivalents to replace deprecated -ms-high-contrast */
+/* Modern forced colors mode styling */
 @media (forced-colors: active) {
   /* Enhanced forced colors mode overrides */
   .slideshow-image {
@@ -32,16 +32,35 @@ code {
   .delete-selected,
   .delete-button {
     forced-color-adjust: none;
-    border: 1px solid transparent;
+    border: 1px solid ButtonText;
+    color: ButtonText;
+    background-color: ButtonFace;
   }
   
   /* Ensure proper contrast for UI elements */
   .image-overlay {
     forced-color-adjust: none;
+    background-color: Canvas;
+    border: 1px solid CanvasText;
   }
   
   /* Ensure checkmark is visible */
   .checkmark {
     forced-color-adjust: none;
+    background-color: Highlight;
+    color: HighlightText;
+  }
+  
+  /* Calendar elements */
+  .calendar-overlay {
+    forced-color-adjust: none;
+    background-color: Canvas;
+    color: CanvasText;
+    border: 1px solid CanvasText;
+  }
+  
+  .calendar-day-cell.today {
+    background-color: Highlight;
+    color: HighlightText;
   }
 }

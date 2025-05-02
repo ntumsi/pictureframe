@@ -8,15 +8,29 @@ const getApiUrl = () => {
   }
   
   // Second priority: derive from current location
-  // In both dev and prod, use localhost:5000/api
-  return 'http://localhost:5000/api';
+  const protocol = window.location.protocol;
+  const hostname = window.location.hostname;
+  const port = window.location.port;
+  
+  // Case 1: Development with React server on port 3000
+  if (port === '3000') {
+    // When using the development server or serve in production, 
+    // we need to connect to the Express API server on port 5000
+    // Use the same hostname but different port
+    return `${protocol}//${hostname}:5000/api`;
+  }
+  
+  // Case 2: Production with Express server
+  // Use the same host as the page (the Express server serves both API and static content)
+  const host = protocol + '//' + window.location.host;
+  return `${host}/api`;
 };
 
 // Use consistent API URL across environments
 const API_URL = getApiUrl();
 
 // Configure axios defaults
-axios.defaults.withCredentials = true; // Enable cookies/credentials
+axios.defaults.withCredentials = false; // Disable credentials to avoid CORS issues
 axios.defaults.timeout = 30000; // 30 second timeout
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
@@ -138,7 +152,7 @@ export const uploadImage = async (file) => {
     const fetchResponse = await fetch(uploadUrl + `?_=${timestamp}`, {
       method: 'POST',
       body: formData,
-      credentials: 'include',
+      credentials: 'same-origin', // Use same-origin to avoid CORS issues
       mode: 'cors',
       headers: {
         'X-Requested-With': 'XMLHttpRequest',

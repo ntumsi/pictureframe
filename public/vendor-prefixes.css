@@ -3,12 +3,23 @@
  * This handles the warnings from React and its dependencies using -ms-high-contrast
  */
 
-/* Override -ms-high-contrast with modern forced-colors equivalent */
+/* Map -ms-high-contrast to modern forced-colors */
 @media (-ms-high-contrast: active), (-ms-high-contrast: none) {
-  /* This will never actually execute because it targets a deprecated feature */
-  /* Its purpose is to override the vendor prefixed styles that cause warnings */
-  * {
-    -ms-high-contrast-adjust: none !important;
+  /* Map deprecated feature to modern system color keywords */
+  button, input, a, select {
+    -ms-high-contrast-adjust: auto;
+    background-color: ButtonFace;
+    color: ButtonText;
+    border-color: ButtonText;
+  }
+
+  img, video, canvas {
+    -ms-high-contrast-adjust: none;
+  }
+
+  /* Explicitly override all React components that might use -ms-high-contrast */
+  [class^="react-"], [class*=" react-"] {
+    -ms-high-contrast-adjust: auto !important;
   }
 }
 
