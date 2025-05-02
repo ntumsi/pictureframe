@@ -39,18 +39,27 @@ const ManageImages = () => {
     for (const file of files) {
       try {
         setUploadStatus(`Uploading ${file.name}...`);
-        await uploadImage(file);
-        setUploadStatus(`${file.name} uploaded successfully!`);
-        fetchImages(); // Refresh images list
+        const result = await uploadImage(file);
+        
+        if (result.error) {
+          console.error('Upload failed:', result.error);
+          setUploadStatus(`Failed to upload ${file.name}: ${result.error}`);
+        } else {
+          console.log('Upload succeeded:', result);
+          setUploadStatus(`${file.name} uploaded successfully!`);
+          // Wait a moment before refreshing the images list
+          setTimeout(() => fetchImages(), 500);
+        }
       } catch (err) {
-        setUploadStatus(`Failed to upload ${file.name}`);
+        console.error('Error in handleFiles:', err);
+        setUploadStatus(`Failed to upload ${file.name}: ${err.message || 'Unknown error'}`);
       }
     }
     
-    // Clear status after 3 seconds
+    // Clear status after a longer time to ensure user sees the message
     setTimeout(() => {
       setUploadStatus(null);
-    }, 3000);
+    }, 5000);
   };
 
   // Handle image deletion

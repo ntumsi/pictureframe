@@ -41,9 +41,22 @@ if [ -d "./build" ]; then
   echo "serve.json copied to build directory"
 fi
 
+# Set proper permissions on directories
+if [ -d "./public" ]; then
+  echo "Setting permissions for public directory..."
+  chmod 755 "./public"
+fi
+
 # Also make sure any existing copied uploads in build are properly linked
 if [ -d "./build" ] && [ -d "./public/uploads" ]; then
   echo "Checking for images in build/uploads directory..."
+  
+  # Set appropriate permissions on uploads directories
+  echo "Setting permissions for uploads directories..."
+  chmod -R 755 "./public/uploads"
+  if [ -d "./build/uploads" ]; then
+    chmod -R 755 "./build/uploads"
+  fi
   
   # Handle the find command properly with better syntax for multiple patterns
   find ./build/uploads -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.gif" -o -name "*.webp" \) 2>/dev/null | \
@@ -52,6 +65,7 @@ if [ -d "./build" ] && [ -d "./public/uploads" ]; then
     if [ ! -f "./public/uploads/$filename" ]; then
       echo "Copying $filename to public/uploads..."
       cp "$file" "./public/uploads/"
+      chmod 644 "./public/uploads/$filename"
     fi
   done
   

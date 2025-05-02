@@ -9,34 +9,64 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const UPLOADS_FOLDER = path.join(__dirname, 'public', 'uploads');
 
-// Create uploads folder if it doesn't exist
+// Create uploads folder if it doesn't exist with proper permissions
 if (!fs.existsSync(UPLOADS_FOLDER)) {
-  fs.mkdirSync(UPLOADS_FOLDER, { recursive: true });
+  console.log(`Creating uploads folder: ${UPLOADS_FOLDER}`);
+  fs.mkdirSync(UPLOADS_FOLDER, { recursive: true, mode: 0o755 });
+} else {
+  // Ensure the uploads folder has the right permissions
+  try {
+    fs.chmodSync(UPLOADS_FOLDER, 0o755);
+    console.log(`Updated permissions for uploads folder: ${UPLOADS_FOLDER}`);
+  } catch (err) {
+    console.error(`Could not set permissions on uploads folder: ${err.message}`);
+  }
 }
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    // Ensure uploads folder exists before saving
+    if (!fs.existsSync(UPLOADS_FOLDER)) {
+      console.log(`Creating uploads folder on demand: ${UPLOADS_FOLDER}`);
+      fs.mkdirSync(UPLOADS_FOLDER, { recursive: true, mode: 0o755 });
+    }
+    
+    console.log(`Storage destination: ${UPLOADS_FOLDER}`);
     cb(null, UPLOADS_FOLDER);
   },
   filename: (req, file, cb) => {
-    const fileExt = path.extname(file.originalname);
-    cb(null, `${uuidv4()}${fileExt}`);
+    // Use a more reliable filename pattern
+    console.log('Original filename:', file.originalname);
+    const fileExt = path.extname(file.originalname).toLowerCase() || '.jpg';
+    const uuid = uuidv4();
+    console.log(`Generated UUID: ${uuid}, extension: ${fileExt}`);
+    cb(null, `${uuid}${fileExt}`);
   }
 });
 
+// Set up multer with more permissive config
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  limits: { 
+    fileSize: 25 * 1024 * 1024, // 25MB limit
+    fieldSize: 25 * 1024 * 1024, // 25MB field size limit
+    files: 5 // Allow up to 5 files at once
+  },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const allowedTypes = /jpeg|jpg|png|gif|webp/i;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
     
-    if (extname && mimetype) {
+    console.log('Upload file check:', file.originalname);
+    console.log('Mimetype:', file.mimetype, 'Valid:', mimetype);
+    console.log('Extension:', path.extname(file.originalname).toLowerCase(), 'Valid:', extname);
+    
+    if (extname || mimetype) {
+      // Allow if either the extension or mimetype is valid
       return cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed!'));
+      cb(new Error(`Only image files are allowed! Got: ${file.mimetype}`));
     }
   }
 });
@@ -230,31 +260,59 @@ app.get('/api/images', (req, res) => {
   }
 });
 
-// Upload image
+// Upload image - separated into its own route
 app.post('/api/upload', (req, res) => {
   console.log('API request received: POST /api/upload');
   console.log('Request headers:', req.headers);
+  console.log('Content-Type:', req.headers['content-type']);
+  
+  // Set appropriate headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With');
+  res.setHeader('Content-Type', 'application/json');
   
   try {
     // Ensure uploads folder exists
     if (!fs.existsSync(UPLOADS_FOLDER)) {
       console.log(`Creating uploads folder: ${UPLOADS_FOLDER}`);
-      fs.mkdirSync(UPLOADS_FOLDER, { recursive: true });
+      fs.mkdirSync(UPLOADS_FOLDER, { recursive: true, mode: 0o755 });
     }
     
     console.log('Uploads folder path:', UPLOADS_FOLDER);
     console.log('Uploads folder exists:', fs.existsSync(UPLOADS_FOLDER));
     
+    // Handle non-multipart requests
+    if (!req.headers['content-type'] || !req.headers['content-type'].includes('multipart/form-data')) {
+      console.warn('Upload request has incorrect Content-Type:', req.headers['content-type']);
+      return res.status(400).json({ 
+        error: 'Content-Type must be multipart/form-data',
+        received: req.headers['content-type'] || 'undefined'
+      });
+    }
+    
     // Use multer middleware with error handling
     upload.single('image')(req, res, (err) => {
       if (err) {
-        console.error('Error uploading file:', err);
+        console.error('Error processing upload:', err);
+        // Handle multer errors
+        if (err instanceof multer.MulterError) {
+          // A multer error occurred
+          if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(413).json({ error: 'File too large (max 25MB)' });
+          }
+          return res.status(400).json({ error: `Upload error: ${err.code}` });
+        }
+        
         return res.status(400).json({ error: err.message });
       }
       
+      console.log('Upload processed');
+      
+      // Check if file was provided
       if (!req.file) {
-        console.warn('No file in upload request');
-        return res.status(400).json({ error: 'No image uploaded' });
+        console.warn('No file found in request');
+        return res.status(400).json({ error: 'No image found in request' });
       }
       
       // Get the file details
@@ -275,19 +333,38 @@ app.post('/api/upload', (req, res) => {
       
       console.log(`File uploaded successfully: ${req.file.filename}`);
       console.log('File details:', fileDetails);
+      console.log('File size:', req.file.size);
       console.log('File saved to:', req.file.path);
       
-      // Verify the file exists
+      // Verify the file exists and is accessible
       const fullPath = path.join(UPLOADS_FOLDER, req.file.filename);
+      const fileExists = fs.existsSync(fullPath);
       console.log('Full file path:', fullPath);
-      console.log('File exists:', fs.existsSync(fullPath));
+      console.log('File exists:', fileExists);
       
-      res.setHeader('Content-Type', 'application/json');
-      res.json(fileDetails);
+      // Set file permissions
+      try {
+        fs.chmodSync(fullPath, 0o644);
+        console.log(`Set permissions for uploaded file: ${fullPath}`);
+      } catch (err) {
+        console.error(`Could not set permissions on file: ${err.message}`);
+      }
+      
+      if (!fileExists) {
+        return res.status(500).json({ 
+          error: 'File was not saved correctly',
+          path: fullPath
+        });
+      }
+      
+      res.status(200).json(fileDetails);
     });
   } catch (error) {
     console.error('Unexpected error in /api/upload:', error);
-    res.status(500).json({ error: 'Server error during upload' });
+    res.status(500).json({ 
+      error: 'Server error during upload',
+      message: error.message
+    });
   }
 });
 

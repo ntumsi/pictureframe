@@ -147,45 +147,76 @@ export const uploadImage = async (file) => {
     // Add timestamp to prevent caching
     const timestamp = new Date().getTime();
     
-    // Use fetch API instead of axios for file uploads
-    console.log('Using fetch API for upload');
-    const fetchResponse = await fetch(uploadUrl + `?_=${timestamp}`, {
-      method: 'POST',
-      body: formData,
-      credentials: 'same-origin', // Use same-origin to avoid CORS issues
-      mode: 'cors',
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-        'X-Client-Debug': 'true',
-        'X-Timestamp': timestamp.toString()
-      }
-    });
+    // Add debug information about formData
+    console.log('FormData created - checking file entry:');
     
-    if (!fetchResponse.ok) {
-      throw new Error(`Upload failed with status: ${fetchResponse.status}`);
+    // Check if FormData contains the file
+    if (formData.has('image')) {
+      console.log('FormData has image field');
+    } else {
+      console.log('WARNING: FormData missing image field');
     }
     
-    const responseText = await fetchResponse.text();
-    console.log('Raw upload response:', responseText);
-    
-    // Parse response
-    let parsedData;
+    // Try to use Axios first for better error handling
     try {
-      parsedData = JSON.parse(responseText);
-    } catch (e) {
-      console.error('Failed to parse upload response:', e);
-      console.error('Response text:', responseText.substring(0, 200));
-      return { 
-        error: 'Failed to parse response',
-        id: 'error-' + Date.now(),
-        name: file.name,
-        path: '#error',
-        url: '#error'
-      };
+      console.log('Trying upload with axios');
+      const axiosResponse = await axios.post(uploadUrl, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',  // Let browser set boundary
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-Timestamp': timestamp.toString(),
+        },
+        withCredentials: false,  // Important for CORS
+        timeout: 60000  // Extend timeout for large images
+      });
+      
+      console.log('Upload successful with axios');
+      console.log('Response:', axiosResponse.data);
+      return axiosResponse.data;
+    } catch (axiosError) {
+      console.warn('Axios upload failed, falling back to fetch:', axiosError.message);
+      console.log('Axios error details:', axiosError);
+      
+      // Fall back to fetch if axios fails
+      console.log('Using fetch API for upload');
+      const fetchResponse = await fetch(uploadUrl + `?_=${timestamp}`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'omit', // Omit credentials completely to avoid CORS issues
+        mode: 'cors',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-Timestamp': timestamp.toString()
+          // No Content-Type - let the browser set it with boundary
+        }
+      });
+      
+      if (!fetchResponse.ok) {
+        throw new Error(`Upload failed with status: ${fetchResponse.status}`);
+      }
+      
+      const responseText = await fetchResponse.text();
+      console.log('Raw upload response:', responseText);
+      
+      // Parse response
+      let parsedData;
+      try {
+        parsedData = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse upload response:', e);
+        console.error('Response text:', responseText.substring(0, 200));
+        return { 
+          error: 'Failed to parse response',
+          id: 'error-' + Date.now(),
+          name: file.name,
+          path: '#error',
+          url: '#error'
+        };
+      }
+      
+      console.log('Parsed upload response:', parsedData);
+      return parsedData;
     }
-    
-    console.log('Parsed upload response:', parsedData);
-    return parsedData;
   } catch (error) {
     console.error('Error uploading image:', error);
     // Return a usable object instead of throwing
