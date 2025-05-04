@@ -283,6 +283,12 @@ npm run serve
 ```
 The application will be accessible at http://localhost:3000 by default, but API functionality will be limited unless you're also running the Express server separately.
 
+**Method 6: Build without deployment**
+```
+npm run build-only
+```
+This will build the React application and update the build folder without starting any servers. Use this when you want to update the build files but handle deployment separately.
+
 ### How it Works
 
 In production mode:
@@ -434,6 +440,18 @@ This application has been secured against common vulnerabilities:
    # Example backup command
    cp -r public/uploads /backup/location/
    ```
+
+4. **Update from git repository**
+   ```
+   # Update codebase while preserving your uploads
+   npm run update
+   ```
+   This will:
+   - Backup your uploads directory
+   - Pull the latest code from git
+   - Restore your uploads
+   - Rebuild the application
+   - Preserve your uploaded images
 
 ## License
 

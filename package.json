@@ -36,7 +36,9 @@
     "deploy": "npm run build && ./start.sh --serve",
     "express-only": "./start.sh",
     "dual": "./start.sh --serve",
-    "network": "./network_check.sh"
+    "network": "./network_check.sh",
+    "build-only": "./build.sh",
+    "update": "./update.sh"
   },
   "eslintConfig": {
     "extends": [
