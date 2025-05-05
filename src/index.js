@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import * as serviceWorker from './serviceWorker';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -10,6 +11,22 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+// Register the service worker for PWA support
+// This enables offline functionality and adds installability
+serviceWorker.register({
+  onUpdate: registration => {
+    const waitingServiceWorker = registration.waiting;
+    if (waitingServiceWorker) {
+      waitingServiceWorker.addEventListener("statechange", event => {
+        if (event.target.state === "activated") {
+          window.location.reload();
+        }
+      });
+      waitingServiceWorker.postMessage({ type: "SKIP_WAITING" });
+    }
+  }
+});
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))

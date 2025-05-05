@@ -11,6 +11,29 @@
   margin-bottom: 20px;
 }
 
+/* Optimize for mobile screens */
+@media screen and (max-width: 768px) {
+  .manage-container {
+    padding: 15px;
+  }
+  
+  .manage-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .manage-header h1 {
+    font-size: 24px;
+  }
+  
+  .view-slideshow {
+    align-self: flex-end;
+    padding: 10px 20px;
+    font-size: 16px;
+  }
+}
+
 .view-slideshow {
   background-color: #4a90e2;
   color: white;
@@ -40,6 +63,21 @@
   padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile optimization for upload zone */
+@media screen and (max-width: 768px) {
+  .upload-zone {
+    padding: 30px 15px;
+  }
+  
+  .upload-button {
+    padding: 12px 24px;
+    font-size: 16px;
+    min-width: 150px;
+  }
 }
 
 .upload-status {
@@ -62,6 +100,8 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .select-all {
@@ -73,10 +113,35 @@
   color: white;
 }
 
+/* Touch-friendly buttons on mobile */
+@media screen and (max-width: 768px) {
+  .select-all,
+  .delete-selected {
+    padding: 12px 20px;
+    font-size: 16px;
+    min-height: 44px; /* Touch-friendly minimum size */
+  }
+  
+  /* Touch feedback */
+  .select-all:active,
+  .delete-selected:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
 .image-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 16px;
+}
+
+/* Mobile-specific grid layout */
+@media screen and (max-width: 768px) {
+  .image-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+  }
 }
 
 .image-card {
@@ -87,10 +152,18 @@
   aspect-ratio: 1;
   cursor: pointer;
   transition: transform 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .image-card:hover {
   transform: scale(1.02);
+}
+
+/* Touch feedback */
+.image-card:active {
+  transform: scale(0.98);
+  opacity: 0.9;
 }
 
 .image-card.selected {

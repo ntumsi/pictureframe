@@ -4,6 +4,10 @@
   position: relative;
   background-color: #000;
   overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: pan-y;
 }
 
 .slideshow {
@@ -49,6 +53,11 @@
   font-size: 24px;
   cursor: pointer;
   pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .prev {
@@ -57,6 +66,23 @@
 
 .next {
   right: 20px;
+}
+
+/* Optimize for Android/mobile */
+@media screen and (max-width: 768px) {
+  .nav-button {
+    width: 60px;
+    height: 60px;
+    font-size: 28px;
+  }
+  
+  .prev {
+    left: 10px;
+  }
+  
+  .next {
+    right: 10px;
+  }
 }
 
 .bottom-controls {
@@ -78,6 +104,59 @@
   cursor: pointer;
   text-decoration: none;
   pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Optimize for mobile screens */
+@media screen and (max-width: 768px) {
+  .bottom-controls {
+    bottom: 30px;
+    gap: 30px;
+  }
+  
+  .fullscreen-button,
+  .manage-link {
+    padding: 12px 24px;
+    font-size: 18px;
+    min-width: 120px;
+    text-align: center;
+  }
+  
+  /* Add active state for touch feedback */
+  .fullscreen-button:active,
+  .manage-link:active,
+  .nav-button:active {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+}
+
+/* Touch swipe indicator animation */
+@keyframes swipeIndicator {
+  0% { opacity: 0; transform: translateX(0); }
+  20% { opacity: 0.7; }
+  80% { opacity: 0.7; }
+  100% { opacity: 0; transform: translateX(100px); }
+}
+
+.swipe-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 80px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 30px;
+  opacity: 0;
+  pointer-events: none;
+  animation: swipeIndicator 0.5s ease-out;
 }
 
 .loading,

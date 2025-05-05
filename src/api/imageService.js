@@ -75,17 +75,44 @@ console.log('API Service initialized with URL:', API_URL);
 console.log('Current location:', window.location.href);
 console.log('Environment:', process.env.NODE_ENV);
 
+// Get device type for optimized image loading
+const getDeviceType = () => {
+  const ua = navigator.userAgent;
+  const isAndroid = /Android/i.test(ua);
+  const isIOS = /iPhone|iPad|iPod/i.test(ua);
+  const isMobile = isAndroid || isIOS || window.innerWidth < 768;
+  
+  if (isAndroid) return 'android';
+  if (isIOS) return 'ios';
+  if (isMobile) return 'mobile';
+  return 'desktop';
+};
+
+// Determine if we should use lower resolution images for mobile
+const shouldUseOptimizedImages = () => {
+  const deviceType = getDeviceType();
+  return deviceType === 'android' || deviceType === 'ios' || deviceType === 'mobile';
+};
+
 export const getAllImages = async () => {
   try {
     // Add timestamp to prevent caching
     const timestamp = new Date().getTime();
-    const url = `${API_URL}/images?_=${timestamp}`;
+    
+    // Add device info for potential server-side optimization
+    const deviceType = getDeviceType();
+    const useOptimized = shouldUseOptimizedImages();
+    
+    const url = `${API_URL}/images?_=${timestamp}&device=${deviceType}&optimized=${useOptimized ? 1 : 0}`;
     console.log('Fetching images from:', url);
+    console.log('Device type:', deviceType, 'Using optimized:', useOptimized);
     
     // Add debug headers
     const headers = {
       'X-Client-Debug': 'true',
       'X-Timestamp': timestamp.toString(),
+      'X-Device-Type': deviceType,
+      'X-Use-Optimized': useOptimized ? '1' : '0',
       'Cache-Control': 'no-cache',
       'Pragma': 'no-cache'
     };
@@ -118,6 +145,14 @@ export const getAllImages = async () => {
     // Ensure we always return an array
     const images = Array.isArray(parsedData) ? parsedData : [];
     console.log('Received images:', images.length, images);
+    
+    // For mobile devices, add a property indicating if we're using optimized images
+    if (useOptimized) {
+      images.forEach(img => {
+        img.isOptimized = true;
+      });
+    }
+    
     return images;
   } catch (error) {
     console.error('Error fetching images:', error);

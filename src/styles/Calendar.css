@@ -15,6 +15,33 @@
   pointer-events: none;
 }
 
+/* Optimize for mobile screens */
+@media screen and (max-width: 768px) {
+  .calendar-overlay {
+    width: 260px;
+    padding: 12px;
+    bottom: 80px; /* Move up to avoid bottom controls */
+    right: 10px;
+  }
+  
+  .calendar-month-year {
+    font-size: 16px;
+  }
+  
+  .calendar-time {
+    font-size: 14px;
+  }
+  
+  .calendar-day-header {
+    font-size: 12px;
+  }
+  
+  .calendar-day-cell {
+    height: 26px;
+    font-size: 12px;
+  }
+}
+
 .calendar-header {
   width: 100%;
   display: flex;
