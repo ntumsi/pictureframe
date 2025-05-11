@@ -113,7 +113,7 @@ sudo nano /etc/systemd/system/pictureframe.service
 
 2. Add the following content (adjust paths as needed):
 
-**Option 1: Using Express Server**
+**Option 1: Using Express Server (Single Server Mode)**
 ```
 [Unit]
 Description=Picture Frame Application
@@ -221,6 +221,75 @@ const UPLOADS_FOLDER = '/mnt/usb/uploads';
 ```
 
 ## Usage
+
+### Linux/Ubuntu Installation
+
+For Ubuntu and other Linux distributions, follow these steps:
+
+1. Make sure you have Node.js (v18.0.0 or later) and npm (v9.0.0 or later) installed:
+```
+# Add Node.js PPA
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# Verify installation
+node -v
+npm -v
+```
+
+2. Clone the repository:
+```
+git clone https://github.com/yourusername/pictureframe.git
+cd pictureframe
+```
+
+3. Install dependencies:
+```
+npm install
+```
+
+4. Start the application:
+```
+# For dual server mode (recommended)
+./start.sh --serve
+
+# For single server mode
+./start.sh
+```
+
+5. For auto-start on system boot:
+```
+# Create systemd service file
+sudo nano /etc/systemd/system/pictureframe.service
+```
+
+Add the following content (adjust paths to your installation directory):
+```
+[Unit]
+Description=Picture Frame Application
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME
+WorkingDirectory=/home/YOUR_USERNAME/pictureframe
+ExecStart=/usr/bin/bash /home/YOUR_USERNAME/pictureframe/start.sh --serve
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+6. Enable and start the service:
+```
+sudo systemctl enable pictureframe.service
+sudo systemctl start pictureframe.service
+```
+
+7. Check service status if needed:
+```
+sudo systemctl status pictureframe.service
+```
 
 ### Development Mode
 
