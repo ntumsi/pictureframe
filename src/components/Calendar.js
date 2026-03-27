@@ -5,12 +5,19 @@ const Calendar = () => {
   const [date, setDate] = useState(new Date());
   
   useEffect(() => {
-    // Update date every minute to ensure it stays current
-    const interval = setInterval(() => {
-      setDate(new Date());
-    }, 60000);
-    
-    return () => clearInterval(interval);
+    // Schedule updates aligned to the start of each minute
+    let timeout;
+    const scheduleNext = () => {
+      const now = new Date();
+      const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+      timeout = setTimeout(() => {
+        setDate(new Date());
+        scheduleNext();
+      }, msUntilNextMinute);
+    };
+    scheduleNext();
+
+    return () => clearTimeout(timeout);
   }, []);
 
   const formatMonth = () => {
