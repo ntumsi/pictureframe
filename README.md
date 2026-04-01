@@ -121,16 +121,18 @@ After=network.target
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/pictureframe
-ExecStart=/usr/bin/bash /home/pi/pictureframe/start.sh
+User=YOUR_USERNAME
+WorkingDirectory=/home/YOUR_USERNAME/pictureframe
+ExecStart=/usr/bin/bash /home/YOUR_USERNAME/pictureframe/start.sh
 Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-**Option 2: Using Serve (Recommended for Raspberry Pi)**
+**Option 2: Using Dual Server Mode (Recommended)**
 ```
 [Unit]
 Description=Picture Frame Application
@@ -138,26 +140,36 @@ After=network.target
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/pictureframe
-ExecStart=/usr/bin/bash /home/pi/pictureframe/start.sh --serve
+User=YOUR_USERNAME
+WorkingDirectory=/home/YOUR_USERNAME/pictureframe
+ExecStart=/usr/bin/bash /home/YOUR_USERNAME/pictureframe/start.sh --serve
 Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
 
 [Install]
 WantedBy=multi-user.target
 ```
 
+Replace `YOUR_USERNAME` with your actual username (e.g., `pi`, `lah`, etc.).
+
 3. Enable and start the service:
 ```
+sudo systemctl daemon-reload
 sudo systemctl enable pictureframe.service
 sudo systemctl start pictureframe.service
 ```
 
-4. Configure the Raspberry Pi for kiosk mode (full-screen browser):
+4. Check the service is running:
+```
+sudo systemctl status pictureframe.service
+```
+
+5. Configure the Raspberry Pi for kiosk mode (full-screen browser):
 
 Create a startup script:
 ```
-sudo nano /home/pi/.config/autostart/kiosk.desktop
+sudo nano /home/YOUR_USERNAME/.config/autostart/kiosk.desktop
 ```
 
 Add the following content:
@@ -178,7 +190,7 @@ Name=Kiosk
 Exec=chromium-browser --noerrdialogs --disable-infobars --kiosk http://localhost:3000
 ```
 
-5. Disable screen blanking by editing the config file:
+6. Disable screen blanking by editing the config file:
 ```
 sudo nano /etc/xdg/lxsession/LXDE-pi/autostart
 ```
@@ -263,7 +275,7 @@ npm install
 sudo nano /etc/systemd/system/pictureframe.service
 ```
 
-Add the following content (adjust paths to your installation directory):
+Add the following content (adjust `YOUR_USERNAME` to your actual username):
 ```
 [Unit]
 Description=Picture Frame Application
@@ -275,6 +287,8 @@ User=YOUR_USERNAME
 WorkingDirectory=/home/YOUR_USERNAME/pictureframe
 ExecStart=/usr/bin/bash /home/YOUR_USERNAME/pictureframe/start.sh --serve
 Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
 
 [Install]
 WantedBy=multi-user.target
@@ -282,11 +296,12 @@ WantedBy=multi-user.target
 
 6. Enable and start the service:
 ```
+sudo systemctl daemon-reload
 sudo systemctl enable pictureframe.service
 sudo systemctl start pictureframe.service
 ```
 
-7. Check service status if needed:
+7. Check the service is running:
 ```
 sudo systemctl status pictureframe.service
 ```
