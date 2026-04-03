@@ -2,9 +2,9 @@
 
 echo "Building Picture Frame app without deployment..."
 
-# Make sure uploads directory exists
-mkdir -p ./public/uploads
-echo "Created uploads directory in public/"
+# Make sure uploads directory and default album exist
+mkdir -p ./public/uploads/default
+echo "Ensured uploads directory exists"
 
 # Build the React app
 echo "Building React app..."
@@ -45,19 +45,10 @@ if [ -d "./public" ]; then
   chmod 755 "./public"
 fi
 
-# Also make sure any existing copied uploads in build are properly linked
-if [ -d "./build" ] && [ -d "./public/uploads" ]; then
-  echo "Checking for images in build/uploads directory..."
-  
-  # Set appropriate permissions on uploads directories
+# Set proper permissions on uploads (including album subdirectories)
+if [ -d "./public/uploads" ]; then
   echo "Setting permissions for uploads directories..."
-  chmod -R 755 "./public/uploads"
-  if [ -d "./build/uploads" ]; then
-    chmod -R 755 "./build/uploads"
-  fi
-  
-  # Also verify the file permissions
-  echo "Ensuring proper file permissions..."
+  find ./public/uploads -type d -exec chmod 755 {} \;
   find ./public/uploads -type f -exec chmod 644 {} \;
 fi
 

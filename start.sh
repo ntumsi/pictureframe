@@ -2,9 +2,37 @@
 
 echo "Starting Picture Frame app..."
 
-# Make sure uploads directory exists
-mkdir -p ./public/uploads
-echo "Created uploads directory in public/"
+# Ensure node/npm are on PATH (needed when run from systemd which has no login shell)
+# Check common install locations: nvm, system, NodeSource, snap
+if ! command -v node &> /dev/null; then
+  for NVM_DIR in "$HOME/.nvm" "/home/$(whoami)/.nvm"; do
+    if [ -s "$NVM_DIR/nvm.sh" ]; then
+      source "$NVM_DIR/nvm.sh"
+      break
+    fi
+  done
+fi
+
+if ! command -v node &> /dev/null; then
+  # Try common system paths
+  for p in /usr/local/bin /usr/bin /snap/bin; do
+    if [ -x "$p/node" ]; then
+      export PATH="$p:$PATH"
+      break
+    fi
+  done
+fi
+
+if ! command -v node &> /dev/null; then
+  echo "ERROR: node not found. Please install Node.js or update your PATH."
+  exit 1
+fi
+
+echo "Using node: $(which node) ($(node --version))"
+
+# Make sure uploads directory and default album exist
+mkdir -p ./public/uploads/default
+echo "Ensured uploads directory exists"
 
 # Check if app is built
 if [ ! -d "./build" ]; then
@@ -47,30 +75,10 @@ if [ -d "./public" ]; then
   chmod 755 "./public"
 fi
 
-# Also make sure any existing copied uploads in build are properly linked
-if [ -d "./build" ] && [ -d "./public/uploads" ]; then
-  echo "Checking for images in build/uploads directory..."
-  
-  # Set appropriate permissions on uploads directories
-  echo "Setting permissions for uploads directories..."
-  chmod -R 755 "./public/uploads"
-  if [ -d "./build/uploads" ]; then
-    chmod -R 755 "./build/uploads"
-  fi
-  
-  # Handle the find command properly with better syntax for multiple patterns
-  find ./build/uploads -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.gif" -o -name "*.webp" \) 2>/dev/null | \
-  while read file; do
-    filename=$(basename "$file")
-    if [ ! -f "./public/uploads/$filename" ]; then
-      echo "Copying $filename to public/uploads..."
-      cp "$file" "./public/uploads/"
-      chmod 644 "./public/uploads/$filename"
-    fi
-  done
-  
-  # Also verify the file permissions
+# Set proper permissions on uploads (including album subdirectories)
+if [ -d "./public/uploads" ]; then
   echo "Ensuring proper file permissions..."
+  find ./public/uploads -type d -exec chmod 755 {} \;
   find ./public/uploads -type f -exec chmod 644 {} \;
 fi
 

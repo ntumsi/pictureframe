@@ -3,11 +3,15 @@
 echo "Picture Frame Update Script"
 echo "This script will update the codebase from git without overwriting your uploads"
 
-# Step 1: Make a backup of the uploads folder
-echo "Step 1: Backing up uploads folder..."
+# Step 1: Make a backup of the uploads folder and config
+echo "Step 1: Backing up uploads folder and config..."
 mkdir -p /tmp/pictureframe_backup
 cp -r ./public/uploads /tmp/pictureframe_backup/
-echo "Backup created at /tmp/pictureframe_backup/uploads"
+if [ -f ./public/config.json ]; then
+  cp ./public/config.json /tmp/pictureframe_backup/config.json
+  echo "Config backed up"
+fi
+echo "Backup created at /tmp/pictureframe_backup/"
 
 # Step 2: Check for any local changes that need to be preserved
 echo "Step 2: Checking for local changes..."
@@ -43,10 +47,14 @@ git stash
 echo "Step 7: Updating code from remote repository..."
 git reset --hard origin/$CURRENT_BRANCH
 
-# Step 8: Restore the uploads folder from backup
-echo "Step 8: Restoring uploads folder from backup..."
+# Step 8: Restore the uploads folder and config from backup
+echo "Step 8: Restoring uploads folder and config from backup..."
 rm -rf ./public/uploads
 cp -r /tmp/pictureframe_backup/uploads ./public/
+if [ -f /tmp/pictureframe_backup/config.json ]; then
+  cp /tmp/pictureframe_backup/config.json ./public/config.json
+  echo "Config restored"
+fi
 echo "Uploads folder restored"
 
 # Step 9: Install any updated dependencies
@@ -58,6 +66,6 @@ echo "Step 10: Rebuilding the application..."
 ./build.sh
 
 echo "Update completed successfully!"
-echo "Your uploads have been preserved."
-echo "If you need to restore the backup, it's available at /tmp/pictureframe_backup/uploads"
+echo "Your uploads and settings have been preserved."
+echo "If you need to restore the backup, it's available at /tmp/pictureframe_backup/"
 echo "A list of your previously installed npm packages is at /tmp/pictureframe_backup/npm_packages.txt"

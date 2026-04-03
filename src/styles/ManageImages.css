@@ -11,18 +11,113 @@
   margin-bottom: 20px;
 }
 
+.manage-header h1 {
+  margin: 0;
+}
+
+.header-links {
+  display: flex;
+  gap: 10px;
+}
+
 .view-slideshow {
   background-color: #4a90e2;
   color: white;
   padding: 8px 16px;
   border-radius: 4px;
   text-decoration: none;
+  font-size: 14px;
 }
 
+/* ─── Error message ───────────────────────────────────────────────────────── */
+.error-message {
+  padding: 10px 16px;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+/* ─── Album bar ───────────────────────────────────────────────────────────── */
+.album-bar {
+  margin-bottom: 20px;
+}
+
+.album-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.album-tab {
+  padding: 8px 16px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.album-tab.active {
+  border-color: #4a90e2;
+  background: #e8f0fe;
+  color: #4a90e2;
+  font-weight: 600;
+}
+
+.album-tab:hover {
+  border-color: #4a90e2;
+}
+
+.album-tab.add-album {
+  border-style: dashed;
+  color: #4a90e2;
+}
+
+.new-album-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.new-album-form input {
+  flex: 1;
+  max-width: 300px;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.btn-primary {
+  background: #4a90e2;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-secondary {
+  background: #e9ecef;
+  color: #333;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* ─── Upload zone ─────────────────────────────────────────────────────────── */
 .upload-zone {
   border: 2px dashed #ccc;
   border-radius: 4px;
-  padding: 40px;
+  padding: 30px;
   text-align: center;
   margin-bottom: 20px;
   transition: all 0.3s ease;
@@ -42,6 +137,12 @@
   cursor: pointer;
 }
 
+.upload-hint {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #888;
+}
+
 .upload-status {
   margin: 10px 0;
   padding: 8px;
@@ -50,6 +151,7 @@
   text-align: center;
 }
 
+/* ─── Image actions ───────────────────────────────────────────────────────── */
 .image-actions {
   margin-bottom: 20px;
   display: flex;
@@ -73,10 +175,18 @@
   color: white;
 }
 
+/* ─── Image grid ──────────────────────────────────────────────────────────── */
 .image-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 16px;
+}
+
+.no-images-text {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #888;
+  padding: 40px 0;
 }
 
 .image-card {
@@ -151,12 +261,7 @@
   cursor: pointer;
 }
 
-.loading,
-.error {
+.loading {
   padding: 20px;
   text-align: center;
-}
-
-.error {
-  color: #dc3545;
 }

@@ -25,3 +25,6 @@ yarn-error.log*
 # uploads folder
 /public/uploads/*
 !/public/uploads/.gitkeep
+
+# user config (contains PIN)
+/public/config.json

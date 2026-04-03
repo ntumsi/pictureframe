@@ -1,0 +1,467 @@
+.settings-container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 20px;
+  color: #333;
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.settings-header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.header-links {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-link {
+  background-color: #4a90e2;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.settings-message {
+  padding: 10px 16px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.settings-message.success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.settings-message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* ─── Sections ────────────────────────────────────────────────────────────── */
+.settings-section {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.settings-section h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.section-description {
+  color: #666;
+  font-size: 13px;
+  margin: 0 0 16px;
+}
+
+/* ─── Setting rows ────────────────────────────────────────────────────────── */
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.setting-row label {
+  min-width: 140px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.setting-row input[type="range"] {
+  flex: 1;
+  accent-color: #4a90e2;
+}
+
+.setting-row select {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.setting-row input[type="password"] {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.setting-value {
+  min-width: 40px;
+  font-size: 14px;
+  color: #666;
+  text-align: right;
+}
+
+/* ─── Toggle button ───────────────────────────────────────────────────────── */
+.toggle-btn {
+  padding: 6px 20px;
+  border: 2px solid #ccc;
+  border-radius: 20px;
+  background: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #999;
+  transition: all 0.2s ease;
+}
+
+.toggle-btn.active {
+  background: #4a90e2;
+  border-color: #4a90e2;
+  color: white;
+}
+
+/* ─── Active album selector ───────────────────────────────────────────────── */
+.album-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.album-option {
+  padding: 8px 16px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.album-option.active {
+  border-color: #4a90e2;
+  background: #e8f0fe;
+  color: #4a90e2;
+  font-weight: 600;
+}
+
+.album-option:hover {
+  border-color: #4a90e2;
+}
+
+/* ─── Album management ────────────────────────────────────────────────────── */
+.album-manage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.album-manage-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #eee;
+}
+
+.album-name {
+  font-weight: 500;
+  flex: 1;
+}
+
+.album-count {
+  color: #888;
+  font-size: 13px;
+}
+
+.album-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.album-edit-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: 1;
+}
+
+.album-edit-form input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* ─── Buttons ─────────────────────────────────────────────────────────────── */
+.btn-primary {
+  background: #4a90e2;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-secondary {
+  background: #e9ecef;
+  color: #333;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-danger {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-small {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+/* ─── Setting groups ──────────────────────────────────────────────────────── */
+.setting-group {
+  margin-bottom: 20px;
+}
+
+.setting-group-label {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.setting-hint {
+  color: #888;
+  font-size: 12px;
+  margin: 0 0 10px;
+}
+
+/* ─── Frame picker ────────────────────────────────────────────────────────── */
+.frame-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+}
+
+.frame-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 11px;
+  color: #555;
+}
+
+.frame-option:hover {
+  border-color: #4a90e2;
+}
+
+.frame-option.active {
+  border-color: #4a90e2;
+  background: #e8f0fe;
+  color: #4a90e2;
+  font-weight: 600;
+}
+
+.frame-preview {
+  width: 60px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+}
+
+.preview-image {
+  width: 30px;
+  height: 22px;
+  background: linear-gradient(135deg, #87CEEB 0%, #4a90e2 50%, #2d6bb5 100%);
+  border-radius: 1px;
+}
+
+.preview-none {
+  background: #1a1a1a;
+  padding: 4px;
+}
+
+.preview-classic-wood {
+  background: linear-gradient(135deg, #8B6914, #C4A265, #8B6914);
+  padding: 6px;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.4);
+}
+
+.preview-dark-wood {
+  background: linear-gradient(135deg, #2C1810, #4A2D1A, #2C1810);
+  padding: 6px;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.5);
+}
+
+.preview-ornate-gold {
+  background: linear-gradient(135deg, #B8860B, #FFD700, #B8860B);
+  padding: 7px;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.3);
+}
+
+.preview-white-gallery {
+  background: linear-gradient(135deg, #fff, #e8e8e8, #fff);
+  padding: 5px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.preview-shadow-box {
+  background: linear-gradient(135deg, #1a1a1a, #333, #1a1a1a);
+  padding: 7px;
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.6);
+}
+
+.preview-rustic {
+  background: linear-gradient(145deg, #6B4226, #8B5E3C, #6B4226);
+  padding: 6px;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.4);
+}
+
+/* ─── Mat color picker ────────────────────────────────────────────────────── */
+.mat-color-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.mat-color-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font-size: 12px;
+  color: #555;
+  transition: all 0.2s ease;
+}
+
+.mat-color-option:hover {
+  border-color: #4a90e2;
+}
+
+.mat-color-option.active {
+  border-color: #4a90e2;
+  background: #e8f0fe;
+}
+
+.mat-swatch {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+}
+
+/* ─── Background picker ───────────────────────────────────────────────────── */
+.bg-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+}
+
+.bg-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 11px;
+  color: #555;
+}
+
+.bg-option:hover {
+  border-color: #4a90e2;
+}
+
+.bg-option.active {
+  border-color: #4a90e2;
+  background: #e8f0fe;
+  color: #4a90e2;
+  font-weight: 600;
+}
+
+.bg-preview {
+  width: 60px;
+  height: 35px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.bg-preview-blur {
+  background: linear-gradient(135deg, #87CEEB 0%, #4a90e2 100%);
+  filter: blur(3px);
+}
+
+.bg-preview-black {
+  background: #000;
+}
+
+.bg-preview-dark-gray {
+  background: #1a1a1a;
+}
+
+.bg-preview-white {
+  background: #f5f5f5;
+}
+
+.bg-preview-color {
+  background: linear-gradient(135deg, #e74c3c, #8e44ad, #3498db, #2ecc71);
+}
+
+/* ─── Color input ─────────────────────────────────────────────────────────── */
+.color-input {
+  width: 50px;
+  height: 36px;
+  padding: 2px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* ─── PIN form ────────────────────────────────────────────────────────────── */
+.pin-form {
+  margin-top: 12px;
+}
+
+.pin-form .btn-primary {
+  margin-top: 8px;
+}

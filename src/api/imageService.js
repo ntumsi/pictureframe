@@ -2,254 +2,210 @@ import axios from 'axios';
 
 // Get the API URL from environment or calculate it based on window.location
 const getApiUrl = () => {
-  // First priority: environment variable
   if (process.env.REACT_APP_API_URL) {
     return process.env.REACT_APP_API_URL;
   }
-  
-  // Second priority: derive from current location
+
   const protocol = window.location.protocol;
   const hostname = window.location.hostname;
   const port = window.location.port;
-  
-  // Case 1: Development with React server on port 3000
+
   if (port === '3000') {
-    // When using the development server or serve in production, 
-    // we need to connect to the Express API server on port 5000
-    // Use the same hostname but different port
     return `${protocol}//${hostname}:5000/api`;
   }
-  
-  // Case 2: Production with Express server
-  // Use the same host as the page (the Express server serves both API and static content)
-  const host = protocol + '//' + window.location.host;
-  return `${host}/api`;
+
+  return `${protocol}//${window.location.host}/api`;
 };
 
-// Use consistent API URL across environments
 const API_URL = getApiUrl();
 
-// Configure axios defaults
-axios.defaults.withCredentials = false; // Disable credentials to avoid CORS issues
-axios.defaults.timeout = 30000; // 30 second timeout
+axios.defaults.withCredentials = false;
+axios.defaults.timeout = 30000;
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
-// Add request interceptor for debugging
-axios.interceptors.request.use(
-  config => {
-    console.log(`Making ${config.method.toUpperCase()} request to: ${config.url}`);
-    return config;
-  },
-  error => {
-    console.error('Request error:', error);
-    return Promise.reject(error);
-  }
-);
+// Helper to attach PIN header
+function pinHeaders() {
+  const pin = sessionStorage.getItem('pictureframe-pin') || '';
+  return pin ? { 'X-Pin': pin } : {};
+}
 
-// Add response interceptor for debugging
-axios.interceptors.response.use(
-  response => {
-    console.log(`Response from ${response.config.url}:`, response.status);
-    return response;
-  },
-  error => {
-    console.error('Response error:', error.message);
-    console.error('Failed URL:', error.config?.url);
-    
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error('Error status:', error.response.status);
-      console.error('Error headers:', error.response.headers);
-      console.error('Error data:', error.response.data);
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error('No response received');
-    }
-    
-    return Promise.reject(error);
-  }
-);
+// ─── Config API ──────────────────────────────────────────────────────────────
 
-console.log('API Service initialized with URL:', API_URL);
-console.log('Current location:', window.location.href);
-console.log('Environment:', process.env.NODE_ENV);
-
-export const getAllImages = async () => {
+export const getConfig = async () => {
   try {
-    // Add timestamp to prevent caching
-    const timestamp = new Date().getTime();
-    const url = `${API_URL}/images?_=${timestamp}`;
-    console.log('Fetching images from:', url);
-    
-    // Add debug headers
-    const headers = {
-      'X-Client-Debug': 'true',
-      'X-Timestamp': timestamp.toString(),
-      'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache'
-    };
-    
-    const response = await axios.get(url, { headers });
-    
-    // Log the raw response for debugging
-    console.log('Raw response headers:', response.headers);
-    console.log('Raw response type:', typeof response.data);
-    
-    // Safe parse if needed (in case response.data is a string)
-    let parsedData;
-    if (typeof response.data === 'string') {
-      try {
-        // Check if it looks like HTML
-        if (response.data.trim().startsWith('<!')) {
-          console.error('Received HTML instead of JSON:', response.data.substring(0, 100));
-          return [];
-        }
-        
-        parsedData = JSON.parse(response.data);
-      } catch (e) {
-        console.error('Failed to parse response data:', e);
-        parsedData = [];
-      }
-    } else {
-      parsedData = response.data;
-    }
-    
-    // Ensure we always return an array
-    const images = Array.isArray(parsedData) ? parsedData : [];
-    console.log('Received images:', images.length, images);
-    return images;
+    const response = await axios.get(`${API_URL}/config`);
+    return response.data;
   } catch (error) {
-    console.error('Error fetching images:', error);
-    console.error('Error details:', error.response?.status, error.response?.statusText);
-    if (error.response?.data) {
-      console.error('Error response data:', 
-        typeof error.response.data === 'string' 
-          ? error.response.data.substring(0, 200) 
-          : error.response.data
-      );
-    }
-    // Return empty array instead of throwing to prevent crashes
+    console.error('Error fetching config:', error);
+    return null;
+  }
+};
+
+export const updateConfig = async (updates) => {
+  try {
+    const response = await axios.put(`${API_URL}/config`, updates, {
+      headers: { ...pinHeaders() }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating config:', error);
+    return { error: error.response?.data?.error || 'Failed to update config' };
+  }
+};
+
+// ─── PIN API ─────────────────────────────────────────────────────────────────
+
+export const verifyPin = async (pin) => {
+  try {
+    const response = await axios.post(`${API_URL}/pin/verify`, { pin });
+    return response.data;
+  } catch (error) {
+    console.error('Error verifying PIN:', error);
+    return { valid: false, hasPin: true };
+  }
+};
+
+export const changePin = async (newPin) => {
+  try {
+    const response = await axios.put(`${API_URL}/pin`, { newPin }, {
+      headers: { ...pinHeaders() }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error changing PIN:', error);
+    return { error: error.response?.data?.error || 'Failed to change PIN' };
+  }
+};
+
+// ─── Album API ───────────────────────────────────────────────────────────────
+
+export const getAlbums = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/albums`);
+    return Array.isArray(response.data) ? response.data : [];
+  } catch (error) {
+    console.error('Error fetching albums:', error);
     return [];
   }
 };
 
-export const uploadImage = async (file) => {
+export const createAlbum = async (name) => {
   try {
-    const uploadUrl = `${API_URL}/upload`;
-    console.log('Uploading image to:', uploadUrl);
-    console.log('File being uploaded:', file.name, file.type, file.size);
-    
-    // Create form data
-    const formData = new FormData();
-    formData.append('image', file);
-    
-    // Add timestamp to prevent caching
-    const timestamp = new Date().getTime();
-    
-    // Add debug information about formData
-    console.log('FormData created - checking file entry:');
-    
-    // Check if FormData contains the file
-    if (formData.has('image')) {
-      console.log('FormData has image field');
-    } else {
-      console.log('WARNING: FormData missing image field');
-    }
-    
-    // Try to use Axios first for better error handling
-    try {
-      console.log('Trying upload with axios');
-      const axiosResponse = await axios.post(uploadUrl, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',  // Let browser set boundary
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-Timestamp': timestamp.toString(),
-        },
-        withCredentials: false,  // Important for CORS
-        timeout: 60000  // Extend timeout for large images
-      });
-      
-      console.log('Upload successful with axios');
-      console.log('Response:', axiosResponse.data);
-      return axiosResponse.data;
-    } catch (axiosError) {
-      console.warn('Axios upload failed, falling back to fetch:', axiosError.message);
-      console.log('Axios error details:', axiosError);
-      
-      // Fall back to fetch if axios fails
-      console.log('Using fetch API for upload');
-      const fetchResponse = await fetch(uploadUrl + `?_=${timestamp}`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'omit', // Omit credentials completely to avoid CORS issues
-        mode: 'cors',
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-Timestamp': timestamp.toString()
-          // No Content-Type - let the browser set it with boundary
-        }
-      });
-      
-      if (!fetchResponse.ok) {
-        throw new Error(`Upload failed with status: ${fetchResponse.status}`);
-      }
-      
-      const responseText = await fetchResponse.text();
-      console.log('Raw upload response:', responseText);
-      
-      // Parse response
-      let parsedData;
-      try {
-        parsedData = JSON.parse(responseText);
-      } catch (e) {
-        console.error('Failed to parse upload response:', e);
-        console.error('Response text:', responseText.substring(0, 200));
-        return { 
-          error: 'Failed to parse response',
-          id: 'error-' + Date.now(),
-          name: file.name,
-          path: '#error',
-          url: '#error'
-        };
-      }
-      
-      console.log('Parsed upload response:', parsedData);
-      return parsedData;
-    }
+    const response = await axios.post(`${API_URL}/albums`, { name }, {
+      headers: { ...pinHeaders() }
+    });
+    return response.data;
   } catch (error) {
-    console.error('Error uploading image:', error);
-    // Return a usable object instead of throwing
-    return { 
-      error: error.message || 'Upload failed',
-      id: 'error-' + Date.now(),
-      name: file.name,
-      path: '#error',
-      url: '#error'
-    };
+    console.error('Error creating album:', error);
+    return { error: error.response?.data?.error || 'Failed to create album' };
   }
 };
 
-export const deleteImage = async (imageId) => {
+export const renameAlbum = async (id, name) => {
   try {
-    console.log('Deleting image:', imageId);
-    const response = await axios.delete(`${API_URL}/images/${imageId}`);
-    
-    // Safe parse if needed
-    let parsedData;
-    if (typeof response.data === 'string') {
-      try {
-        parsedData = JSON.parse(response.data);
-      } catch (e) {
-        console.error('Failed to parse delete response data:', e);
-        parsedData = { success: false, error: 'Failed to parse response' };
-      }
-    } else {
-      parsedData = response.data;
+    const response = await axios.put(`${API_URL}/albums/${id}`, { name }, {
+      headers: { ...pinHeaders() }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error renaming album:', error);
+    return { error: error.response?.data?.error || 'Failed to rename album' };
+  }
+};
+
+export const deleteAlbum = async (id) => {
+  try {
+    const response = await axios.delete(`${API_URL}/albums/${id}`, {
+      headers: { ...pinHeaders() }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting album:', error);
+    return { error: error.response?.data?.error || 'Failed to delete album' };
+  }
+};
+
+// ─── Image API ───────────────────────────────────────────────────────────────
+
+export const getAllImages = async (album) => {
+  try {
+    const timestamp = new Date().getTime();
+    const params = new URLSearchParams({ _: timestamp });
+    if (album) params.set('album', album);
+
+    const url = `${API_URL}/images?${params}`;
+    const response = await axios.get(url, {
+      headers: { 'Cache-Control': 'no-cache' }
+    });
+
+    let data = response.data;
+    if (typeof data === 'string') {
+      if (data.trim().startsWith('<!')) return [];
+      try { data = JSON.parse(data); } catch { return []; }
     }
-    
-    console.log('Delete response:', parsedData);
-    return parsedData;
+
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error('Error fetching images:', error);
+    return [];
+  }
+};
+
+export const uploadImage = async (file, album = 'default') => {
+  try {
+    const uploadUrl = `${API_URL}/upload`;
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('album', album);
+
+    try {
+      const response = await axios.post(uploadUrl, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        withCredentials: false,
+        timeout: 60000
+      });
+      return response.data;
+    } catch (axiosError) {
+      console.warn('Axios upload failed, falling back to fetch:', axiosError.message);
+
+      const timestamp = new Date().getTime();
+      const fetchResponse = await fetch(uploadUrl + `?_=${timestamp}`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'omit',
+        mode: 'cors',
+      });
+
+      if (!fetchResponse.ok) {
+        throw new Error(`Upload failed with status: ${fetchResponse.status}`);
+      }
+
+      const responseText = await fetchResponse.text();
+      try {
+        return JSON.parse(responseText);
+      } catch {
+        return { error: 'Failed to parse response', id: 'error-' + Date.now(), name: file.name };
+      }
+    }
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    return { error: error.message || 'Upload failed', id: 'error-' + Date.now(), name: file.name };
+  }
+};
+
+export const deleteImage = async (imageId, album) => {
+  try {
+    const params = album ? `?album=${album}` : '';
+    const response = await axios.delete(`${API_URL}/images/${imageId}${params}`);
+
+    let data = response.data;
+    if (typeof data === 'string') {
+      try { data = JSON.parse(data); } catch { return { success: false, error: 'Failed to parse response' }; }
+    }
+    return data;
   } catch (error) {
     console.error('Error deleting image:', error);
     return { success: false, error: error.message };

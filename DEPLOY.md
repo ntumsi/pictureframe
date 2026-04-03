@@ -28,11 +28,9 @@ git pull origin main
 npm run deploy
 ```
 
-### Standard Deployment (Dual Server Mode - Recommended)
+### Standard Deployment (Single Express Server - Recommended)
 
-This will start:
-- Express server on port 5000 for the API
-- Static serve on port 3000 for the frontend
+The Express server handles both the API and the frontend on port 5000:
 
 ```bash
 # Make sure you're on the main branch
@@ -41,24 +39,24 @@ git checkout main
 # Pull the latest changes
 git pull origin main
 
-# Start both servers (frontend on port 3000, backend on port 5000)
-npm run production
+# Build the app
+npm run build
+
+# Start the server
+./start.sh
 ```
 
-### Single Server Deployment (Express Only - Not Recommended)
+Access the app at `http://<your-ip>:5000`
 
-This uses only the Express server for both API and static files (only use if dual server mode is not working):
+### Dual Server Deployment (Express + Serve)
+
+If you prefer separate servers for API and frontend:
 
 ```bash
-# Make sure you're on the main branch
-git checkout main
-
-# Pull the latest changes
-git pull origin main
-
-# Start with single server mode (Express only)
-npm run express-only
+./start.sh --serve
 ```
+
+This starts Express on port 5000 (API) and serve on port 3000 (frontend).
 
 ### Testing Network Access
 
@@ -68,17 +66,15 @@ To verify network access:
 npm run network
 ```
 
-## Automatic Deployment
+## Automatic Deployment (Raspberry Pi / Linux)
 
-For automatic deployment on boot (e.g., on a Raspberry Pi), follow these steps:
-
-1. Create a systemd service file:
+### 1. Create the systemd service file
 
 ```bash
 sudo nano /etc/systemd/system/pictureframe.service
 ```
 
-2. Add the following content (adjust paths as needed):
+Add the following content (adjust username and paths):
 
 ```ini
 [Unit]
@@ -87,54 +83,124 @@ After=network.target
 
 [Service]
 Type=simple
-User=<your-username>
-WorkingDirectory=/path/to/pictureframe
-# Always use dual server mode for reliable operation
-ExecStart=/bin/bash /path/to/pictureframe/start.sh --serve
+User=pi
+WorkingDirectory=/home/pi/pictureframe
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/bash /home/pi/pictureframe/start.sh
 Restart=on-failure
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-3. Enable and start the service:
+**If you installed Node.js via nvm**, use this instead for ExecStart:
+
+```ini
+ExecStart=/bin/bash -c 'source /home/pi/.nvm/nvm.sh && /home/pi/pictureframe/start.sh'
+```
+
+### 2. Enable and start the service
 
 ```bash
+sudo systemctl daemon-reload
 sudo systemctl enable pictureframe.service
 sudo systemctl start pictureframe.service
+```
+
+### 3. Check it's running
+
+```bash
+sudo systemctl status pictureframe.service
+```
+
+### 4. View logs if something goes wrong
+
+```bash
+sudo journalctl -u pictureframe.service -f
+```
+
+## Kiosk Mode (Auto-launch Chromium)
+
+To automatically open the slideshow in fullscreen on the Pi's screen:
+
+### Option A: Desktop autostart (Raspberry Pi OS with desktop)
+
+```bash
+mkdir -p ~/.config/autostart
+nano ~/.config/autostart/pictureframe-kiosk.desktop
+```
+
+```ini
+[Desktop Entry]
+Type=Application
+Name=Picture Frame Kiosk
+Exec=chromium-browser --noerrdialogs --disable-infobars --kiosk http://localhost:5000
+```
+
+### Option B: Disable screen blanking
+
+```bash
+sudo nano /etc/xdg/lxsession/LXDE-pi/autostart
+```
+
+Add these lines:
+
+```
+@xset s off
+@xset -dpms
+@xset s noblank
 ```
 
 ## Troubleshooting Deployment Issues
 
 If the application fails to start after deployment:
 
-1. Check the server logs:
+1. Check the service logs:
 ```bash
-cat server.log
+sudo journalctl -u pictureframe.service --no-pager -n 50
 ```
 
-2. Check for broken upload directory links:
+2. Check if node is accessible:
+```bash
+which node
+node --version
+```
+
+3. Check for broken upload directory links:
 ```bash
 ls -la build/uploads
 ```
 
-3. Fix any broken symlinks using the start script:
+4. Rebuild and restart:
 ```bash
-./start.sh
+npm run build
+sudo systemctl restart pictureframe.service
 ```
 
 ## Rolling Back a Deployment
 
-If a deployment causes issues, you can roll back to a previous version:
+If a deployment causes issues:
 
 ```bash
 # Find the commit hash of the last working version
-git log
+git log --oneline
 
 # Reset to that version
 git checkout main
 git reset --hard <commit-hash>
 
-# Redeploy
-npm run production
+# Rebuild and restart
+npm run build
+sudo systemctl restart pictureframe.service
+```
+
+## Updating
+
+Use the update script to pull the latest code while preserving your uploads and settings:
+
+```bash
+./update.sh
+sudo systemctl restart pictureframe.service
 ```

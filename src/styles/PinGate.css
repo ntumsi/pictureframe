@@ -1,0 +1,78 @@
+.pin-gate {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #f0f2f5;
+}
+
+.pin-gate-box {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  max-width: 360px;
+  width: 90%;
+}
+
+.pin-gate-box h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  color: #333;
+}
+
+.pin-gate-box p {
+  color: #666;
+  font-size: 14px;
+  margin: 0 0 24px;
+}
+
+.pin-input {
+  width: 100%;
+  padding: 12px;
+  font-size: 24px;
+  text-align: center;
+  letter-spacing: 8px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.pin-input:focus {
+  border-color: #4a90e2;
+}
+
+.pin-error {
+  color: #dc3545;
+  font-size: 14px;
+  margin: 8px 0 0;
+}
+
+.pin-submit {
+  width: 100%;
+  padding: 12px;
+  margin-top: 16px;
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.pin-submit:hover {
+  background: #3a7bc8;
+}
+
+.pin-gate-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 18px;
+  color: #666;
+}
