@@ -7,16 +7,16 @@ import '../styles/Slideshow.css';
 const Slideshow = () => {
   const [images, setImages] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [nextIndex, setNextIndex] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showControls, setShowControls] = useState(true);
   const [error, setError] = useState(null);
-  const [transition, setTransition] = useState('fade');
-  const [transitioning, setTransitioning] = useState(false);
-  const [slideDirection, setSlideDirection] = useState('next');
   const [config, setConfig] = useState(null);
   const [orientation, setOrientation] = useState('landscape');
+  const [animating, setAnimating] = useState(false);
   const intervalRef = useRef(null);
+  const preloadRef = useRef(new Image());
 
   // Load config
   useEffect(() => {
@@ -39,6 +39,7 @@ const Slideshow = () => {
   const frameStyle = config?.slideshow?.frame || 'none';
   const showMat = config?.slideshow?.mat || false;
   const matColor = config?.slideshow?.matColor || '#ffffff';
+  const transitionDuration = transitionType === 'none' ? 0 : 600;
 
   // Load images
   useEffect(() => {
@@ -65,35 +66,53 @@ const Slideshow = () => {
     return () => clearInterval(refresh);
   }, [activeAlbum, shuffleMode]);
 
+  // Preload the next image in sequence
+  useEffect(() => {
+    if (images.length < 2) return;
+    const next = (currentIndex + 1) % images.length;
+    const nextSrc = images[next].fullUrl || images[next].url;
+    preloadRef.current.src = nextSrc;
+  }, [currentIndex, images]);
+
   // Detect image orientation on load
   const handleImageLoad = (e) => {
     const { naturalWidth, naturalHeight } = e.target;
-    if (naturalWidth >= naturalHeight) {
-      setOrientation('landscape');
-    } else {
-      setOrientation('portrait');
-    }
+    setOrientation(naturalWidth >= naturalHeight ? 'landscape' : 'portrait');
   };
 
-  // Advance to next/prev with transition
+  // Advance: preload next, then crossfade
   const advance = useCallback((direction = 'next') => {
-    if (images.length === 0) return;
+    if (images.length < 2 || animating) return;
 
-    setSlideDirection(direction);
-    setTransitioning(true);
+    const target = direction === 'next'
+      ? (currentIndex + 1) % images.length
+      : (currentIndex - 1 + images.length) % images.length;
 
-    setTimeout(() => {
-      setCurrentIndex(prev => {
-        if (direction === 'next') return (prev + 1) % images.length;
-        return (prev - 1 + images.length) % images.length;
-      });
-      setTimeout(() => setTransitioning(false), 50);
-    }, transitionType === 'none' ? 0 : 400);
-  }, [images.length, transitionType]);
+    const targetSrc = images[target].fullUrl || images[target].url;
+
+    // Preload the target image, then start the transition
+    const img = new Image();
+    img.onload = () => {
+      setNextIndex(target);
+      setAnimating(true);
+
+      // After the transition completes, swap current to next
+      setTimeout(() => {
+        setCurrentIndex(target);
+        setNextIndex(null);
+        setAnimating(false);
+      }, transitionDuration);
+    };
+    img.onerror = () => {
+      // Skip broken images
+      setCurrentIndex(target);
+    };
+    img.src = targetSrc;
+  }, [images, currentIndex, animating, transitionDuration]);
 
   // Auto-advance slideshow
   useEffect(() => {
-    if (images.length === 0) return;
+    if (images.length < 2) return;
 
     intervalRef.current = setInterval(() => {
       advance('next');
@@ -101,10 +120,6 @@ const Slideshow = () => {
 
     return () => clearInterval(intervalRef.current);
   }, [images, slideshowInterval, advance]);
-
-  useEffect(() => {
-    setTransition(transitionType);
-  }, [transitionType]);
 
   const toggleFullscreen = useCallback(() => {
     if (!isFullscreen) {
@@ -172,11 +187,9 @@ const Slideshow = () => {
   }
 
   const currentImage = images[currentIndex];
-  const imageSrc = currentImage.fullUrl || currentImage.url;
-
-  const transitionClass = transitioning
-    ? `transition-${transition}-out ${slideDirection}`
-    : `transition-${transition}-in ${slideDirection}`;
+  const currentSrc = currentImage.fullUrl || currentImage.url;
+  const nextImage = nextIndex !== null ? images[nextIndex] : null;
+  const nextSrc = nextImage ? (nextImage.fullUrl || nextImage.url) : null;
 
   // Background style
   const containerStyle = {};
@@ -190,25 +203,25 @@ const Slideshow = () => {
   const hasFrame = frameStyle && frameStyle !== 'none';
   const frameClass = hasFrame ? `frame-${frameStyle}` : 'frame-none';
   const orientClass = `orient-${orientation}`;
+  const durationStyle = { animationDuration: `${transitionDuration}ms`, transitionDuration: `${transitionDuration}ms` };
 
-  const imgProps = {
-    src: imageSrc,
-    alt: currentImage.name,
-    className: `slideshow-image ${transition !== 'none' ? transitionClass : ''}`,
-    onLoad: handleImageLoad,
-    onError: () => {
-      setTimeout(() => {
-        setCurrentIndex((prev) => (prev + 1) % images.length);
-      }, 2000);
-    },
-  };
+  const renderImage = (src, alt, className, onLoad) => (
+    <img
+      src={src}
+      alt={alt}
+      className={`slideshow-image ${className}`}
+      style={durationStyle}
+      onLoad={onLoad}
+      draggable={false}
+    />
+  );
 
   return (
     <div className="slideshow-container" style={containerStyle}>
       {background === 'blur' && (
         <div
           className="slideshow-bg-blur"
-          style={{ backgroundImage: `url(${imageSrc})` }}
+          style={{ backgroundImage: `url(${nextSrc || currentSrc})` }}
         />
       )}
 
@@ -216,10 +229,28 @@ const Slideshow = () => {
         <div className={`frame-wrapper ${frameClass} ${orientClass}`}>
           {showMat && hasFrame ? (
             <div className="frame-mat" style={{ backgroundColor: matColor }}>
-              <img {...imgProps} />
+              <div className="crossfade-container">
+                {renderImage(currentSrc, currentImage.name,
+                  animating && transitionType !== 'none' ? `cf-out cf-${transitionType}` : 'cf-visible',
+                  handleImageLoad
+                )}
+                {nextSrc && renderImage(nextSrc, nextImage.name,
+                  animating && transitionType !== 'none' ? `cf-in cf-${transitionType}` : 'cf-hidden',
+                  handleImageLoad
+                )}
+              </div>
             </div>
           ) : (
-            <img {...imgProps} />
+            <div className="crossfade-container">
+              {renderImage(currentSrc, currentImage.name,
+                animating && transitionType !== 'none' ? `cf-out cf-${transitionType}` : 'cf-visible',
+                handleImageLoad
+              )}
+              {nextSrc && renderImage(nextSrc, nextImage.name,
+                animating && transitionType !== 'none' ? `cf-in cf-${transitionType}` : 'cf-hidden',
+                handleImageLoad
+              )}
+            </div>
           )}
         </div>
 

@@ -19,7 +19,7 @@
   filter: blur(30px) brightness(0.5);
   transform: scale(1.1);
   z-index: 0;
-  transition: background-image 0.6s ease;
+  transition: background-image 0.8s ease;
 }
 
 /* ─── Main slideshow area ─────────────────────────────────────────────────── */
@@ -33,9 +33,95 @@
   z-index: 1;
 }
 
+/* ─── Crossfade container — stacks two images on top of each other ────────── */
+.crossfade-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
 .slideshow-image {
   display: block;
   object-fit: contain;
+}
+
+/* The outgoing image (current) and incoming image (next) are both
+   absolutely positioned inside the crossfade container.
+   The first image is position:relative to give the container size. */
+.crossfade-container .slideshow-image:nth-child(2) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Default states */
+.cf-visible {
+  opacity: 1;
+}
+
+.cf-hidden {
+  opacity: 0;
+}
+
+/* ─── Fade crossfade ──────────────────────────────────────────────────────── */
+.cf-out.cf-fade {
+  animation: cfFadeOut 600ms ease forwards;
+}
+
+.cf-in.cf-fade {
+  animation: cfFadeIn 600ms ease forwards;
+}
+
+@keyframes cfFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+@keyframes cfFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ─── Slide crossfade ─────────────────────────────────────────────────────── */
+.cf-out.cf-slide {
+  animation: cfSlideOut 600ms ease forwards;
+}
+
+.cf-in.cf-slide {
+  animation: cfSlideIn 600ms ease forwards;
+}
+
+@keyframes cfSlideOut {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(-8%); opacity: 0; }
+}
+
+@keyframes cfSlideIn {
+  from { transform: translateX(8%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+/* ─── Zoom crossfade ──────────────────────────────────────────────────────── */
+.cf-out.cf-zoom {
+  animation: cfZoomOut 600ms ease forwards;
+}
+
+.cf-in.cf-zoom {
+  animation: cfZoomIn 600ms ease forwards;
+}
+
+@keyframes cfZoomOut {
+  from { transform: scale(1); opacity: 1; }
+  to   { transform: scale(1.05); opacity: 0; }
+}
+
+@keyframes cfZoomIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
 }
 
 /* ─── Frame wrapper (shared) ──────────────────────────────────────────────── */
@@ -54,8 +140,6 @@
 }
 
 /* ─── Framed: landscape photos fill width, portrait photos fill height ───── */
-
-/* Landscape images in a frame: stretch to screen width, height follows */
 .frame-wrapper:not(.frame-none).orient-landscape .slideshow-image {
   width: calc(100vw - 60px);
   max-width: calc(100vw - 60px);
@@ -63,7 +147,6 @@
   height: auto;
 }
 
-/* Portrait images in a frame: stretch to screen height, width follows */
 .frame-wrapper:not(.frame-none).orient-portrait .slideshow-image {
   height: calc(100vh - 60px);
   max-height: calc(100vh - 60px);
@@ -80,7 +163,6 @@
   line-height: 0;
 }
 
-/* With mat: account for mat padding (18px * 2 sides = 36px extra) */
 .frame-wrapper:not(.frame-none).orient-landscape .frame-mat .slideshow-image {
   width: calc(100vw - 96px);
   max-width: calc(100vw - 96px);
@@ -260,7 +342,6 @@
     inset -2px -2px 5px rgba(0, 0, 0, 0.4),
     5px 5px 20px rgba(0, 0, 0, 0.5);
   border: 3px solid #3E2415;
-  /* Rough texture feel via pseudo-elements */
 }
 
 .frame-rustic::before {
@@ -283,81 +364,6 @@
   inset: 6px;
   border: 2px solid rgba(0, 0, 0, 0.3);
   pointer-events: none;
-}
-
-/* ─── Fade transition ─────────────────────────────────────────────────────── */
-.transition-fade-out {
-  animation: fadeOut 0.4s ease forwards;
-}
-
-.transition-fade-in {
-  animation: fadeIn 0.4s ease forwards;
-}
-
-@keyframes fadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* ─── Slide transition ────────────────────────────────────────────────────── */
-.transition-slide-out.next {
-  animation: slideOutLeft 0.4s ease forwards;
-}
-
-.transition-slide-out.prev {
-  animation: slideOutRight 0.4s ease forwards;
-}
-
-.transition-slide-in.next {
-  animation: slideInRight 0.4s ease forwards;
-}
-
-.transition-slide-in.prev {
-  animation: slideInLeft 0.4s ease forwards;
-}
-
-@keyframes slideOutLeft {
-  from { transform: translateX(0); opacity: 1; }
-  to { transform: translateX(-100%); opacity: 0; }
-}
-
-@keyframes slideOutRight {
-  from { transform: translateX(0); opacity: 1; }
-  to { transform: translateX(100%); opacity: 0; }
-}
-
-@keyframes slideInRight {
-  from { transform: translateX(50%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes slideInLeft {
-  from { transform: translateX(-50%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-/* ─── Zoom transition ─────────────────────────────────────────────────────── */
-.transition-zoom-out {
-  animation: zoomOut 0.4s ease forwards;
-}
-
-.transition-zoom-in {
-  animation: zoomIn 0.4s ease forwards;
-}
-
-@keyframes zoomOut {
-  from { transform: scale(1); opacity: 1; }
-  to { transform: scale(1.2); opacity: 0; }
-}
-
-@keyframes zoomIn {
-  from { transform: scale(0.8); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
 }
 
 /* ─── Controls ────────────────────────────────────────────────────────────── */
