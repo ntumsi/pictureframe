@@ -6,17 +6,20 @@ import '../styles/Slideshow.css';
 
 const Slideshow = () => {
   const [images, setImages] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [nextIndex, setNextIndex] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showControls, setShowControls] = useState(true);
   const [error, setError] = useState(null);
   const [config, setConfig] = useState(null);
   const [orientation, setOrientation] = useState('landscape');
-  const [animating, setAnimating] = useState(false);
+
+  // Two-layer crossfade: layers[0] is bottom, layers[1] is top
+  // activeLayer is 0 or 1 — whichever is currently visible (opacity 1)
+  const [layers, setLayers] = useState([null, null]); // each is an image src string
+  const [activeLayer, setActiveLayer] = useState(0);
+  const currentIndexRef = useRef(0);
+  const animatingRef = useRef(false);
   const intervalRef = useRef(null);
-  const preloadRef = useRef(new Image());
 
   // Load config
   useEffect(() => {
@@ -39,7 +42,7 @@ const Slideshow = () => {
   const frameStyle = config?.slideshow?.frame || 'none';
   const showMat = config?.slideshow?.mat || false;
   const matColor = config?.slideshow?.matColor || '#ffffff';
-  const transitionDuration = transitionType === 'none' ? 0 : 600;
+  const transitionMs = transitionType === 'none' ? 0 : 800;
 
   // Load images
   useEffect(() => {
@@ -66,51 +69,75 @@ const Slideshow = () => {
     return () => clearInterval(refresh);
   }, [activeAlbum, shuffleMode]);
 
-  // Preload the next image in sequence
+  // Initialize first image into the active layer
+  useEffect(() => {
+    if (images.length > 0 && layers[0] === null && layers[1] === null) {
+      const src = images[0].fullUrl || images[0].url;
+      setLayers([src, null]);
+      setActiveLayer(0);
+      currentIndexRef.current = 0;
+    }
+  }, [images, layers]);
+
+  // Preload next image in background
   useEffect(() => {
     if (images.length < 2) return;
-    const next = (currentIndex + 1) % images.length;
-    const nextSrc = images[next].fullUrl || images[next].url;
-    preloadRef.current.src = nextSrc;
-  }, [currentIndex, images]);
+    const nextIdx = (currentIndexRef.current + 1) % images.length;
+    const img = new window.Image();
+    img.src = images[nextIdx].fullUrl || images[nextIdx].url;
+  }, [images, activeLayer]); // re-preload after each transition
 
-  // Detect image orientation on load
+  // Detect image orientation
   const handleImageLoad = (e) => {
     const { naturalWidth, naturalHeight } = e.target;
     setOrientation(naturalWidth >= naturalHeight ? 'landscape' : 'portrait');
   };
 
-  // Advance: preload next, then crossfade
+  // Core transition: load the next image into the inactive layer, then flip opacity
   const advance = useCallback((direction = 'next') => {
-    if (images.length < 2 || animating) return;
+    if (images.length < 2 || animatingRef.current) return;
+    animatingRef.current = true;
 
-    const target = direction === 'next'
-      ? (currentIndex + 1) % images.length
-      : (currentIndex - 1 + images.length) % images.length;
+    const nextIdx = direction === 'next'
+      ? (currentIndexRef.current + 1) % images.length
+      : (currentIndexRef.current - 1 + images.length) % images.length;
 
-    const targetSrc = images[target].fullUrl || images[target].url;
+    const nextSrc = images[nextIdx].fullUrl || images[nextIdx].url;
+    const inactiveLayer = activeLayer === 0 ? 1 : 0;
 
-    // Preload the target image, then start the transition
-    const img = new Image();
-    img.onload = () => {
-      setNextIndex(target);
-      setAnimating(true);
+    // Step 1: Load the next image into the hidden (inactive) layer
+    const preload = new window.Image();
+    preload.onload = () => {
+      // Set the inactive layer's src
+      setLayers(prev => {
+        const updated = [...prev];
+        updated[inactiveLayer] = nextSrc;
+        return updated;
+      });
 
-      // After the transition completes, swap current to next
-      setTimeout(() => {
-        setCurrentIndex(target);
-        setNextIndex(null);
-        setAnimating(false);
-      }, transitionDuration);
+      // Step 2: After a single frame (to let the browser paint the hidden layer),
+      // flip activeLayer so CSS transitions kick in
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setActiveLayer(inactiveLayer);
+          currentIndexRef.current = nextIdx;
+
+          // Step 3: After the transition completes, unlock
+          setTimeout(() => {
+            animatingRef.current = false;
+          }, transitionMs + 50);
+        });
+      });
     };
-    img.onerror = () => {
+    preload.onerror = () => {
       // Skip broken images
-      setCurrentIndex(target);
+      currentIndexRef.current = nextIdx;
+      animatingRef.current = false;
     };
-    img.src = targetSrc;
-  }, [images, currentIndex, animating, transitionDuration]);
+    preload.src = nextSrc;
+  }, [images, activeLayer, transitionMs]);
 
-  // Auto-advance slideshow
+  // Auto-advance
   useEffect(() => {
     if (images.length < 2) return;
 
@@ -123,60 +150,42 @@ const Slideshow = () => {
 
   const toggleFullscreen = useCallback(() => {
     if (!isFullscreen) {
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen();
-      }
+      document.documentElement.requestFullscreen?.();
     } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
+      document.exitFullscreen?.();
     }
     setIsFullscreen(!isFullscreen);
   }, [isFullscreen]);
 
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    const h = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', h);
+    return () => document.removeEventListener('fullscreenchange', h);
   }, []);
 
   useEffect(() => {
     let timeout;
-    const handleMouseMove = () => {
+    const h = () => {
       setShowControls(true);
       clearTimeout(timeout);
       timeout = setTimeout(() => setShowControls(false), 3000);
     };
-    document.addEventListener('mousemove', handleMouseMove);
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      clearTimeout(timeout);
-    };
+    document.addEventListener('mousemove', h);
+    return () => { document.removeEventListener('mousemove', h); clearTimeout(timeout); };
   }, []);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const h = (e) => {
       if (e.key === 'ArrowRight') advance('next');
       else if (e.key === 'ArrowLeft') advance('prev');
       else if (e.key === 'f') toggleFullscreen();
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
   }, [advance, toggleFullscreen]);
 
-  const goToNext = () => advance('next');
-  const goToPrevious = () => advance('prev');
-
-  if (isLoading) {
-    return <div className="loading">Loading...</div>;
-  }
-
-  if (error) {
-    return <div className="error">{error}</div>;
-  }
-
+  if (isLoading) return <div className="loading">Loading...</div>;
+  if (error) return <div className="error">{error}</div>;
   if (images.length === 0) {
     return (
       <div className="no-images">
@@ -186,34 +195,39 @@ const Slideshow = () => {
     );
   }
 
-  const currentImage = images[currentIndex];
-  const currentSrc = currentImage.fullUrl || currentImage.url;
-  const nextImage = nextIndex !== null ? images[nextIndex] : null;
-  const nextSrc = nextImage ? (nextImage.fullUrl || nextImage.url) : null;
-
-  // Background style
+  // Background
   const containerStyle = {};
   const bgColors = { black: '#000000', 'dark-gray': '#1a1a1a', white: '#f5f5f5' };
-  if (bgColors[background]) {
-    containerStyle.backgroundColor = bgColors[background];
-  } else if (background === 'color') {
-    containerStyle.backgroundColor = backgroundColor;
-  }
+  if (bgColors[background]) containerStyle.backgroundColor = bgColors[background];
+  else if (background === 'color') containerStyle.backgroundColor = backgroundColor;
 
   const hasFrame = frameStyle && frameStyle !== 'none';
   const frameClass = hasFrame ? `frame-${frameStyle}` : 'frame-none';
   const orientClass = `orient-${orientation}`;
-  const durationStyle = { animationDuration: `${transitionDuration}ms`, transitionDuration: `${transitionDuration}ms` };
+  const activeSrc = layers[activeLayer];
 
-  const renderImage = (src, alt, className, onLoad) => (
-    <img
-      src={src}
-      alt={alt}
-      className={`slideshow-image ${className}`}
-      style={durationStyle}
-      onLoad={onLoad}
-      draggable={false}
-    />
+  // Transition CSS custom property
+  const transitionVar = { '--transition-ms': `${transitionMs}ms` };
+
+  const renderLayers = () => (
+    <div className={`crossfade-container cf-type-${transitionType}`} style={transitionVar}>
+      {[0, 1].map(i => (
+        <div
+          key={i}
+          className={`cf-layer ${activeLayer === i ? 'cf-active' : 'cf-inactive'}`}
+        >
+          {layers[i] && (
+            <img
+              src={layers[i]}
+              alt=""
+              className="slideshow-image"
+              onLoad={activeLayer === i ? handleImageLoad : undefined}
+              draggable={false}
+            />
+          )}
+        </div>
+      ))}
+    </div>
   );
 
   return (
@@ -221,7 +235,7 @@ const Slideshow = () => {
       {background === 'blur' && (
         <div
           className="slideshow-bg-blur"
-          style={{ backgroundImage: `url(${nextSrc || currentSrc})` }}
+          style={{ backgroundImage: `url(${activeSrc})` }}
         />
       )}
 
@@ -229,38 +243,19 @@ const Slideshow = () => {
         <div className={`frame-wrapper ${frameClass} ${orientClass}`}>
           {showMat && hasFrame ? (
             <div className="frame-mat" style={{ backgroundColor: matColor }}>
-              <div className="crossfade-container">
-                {renderImage(currentSrc, currentImage.name,
-                  animating && transitionType !== 'none' ? `cf-out cf-${transitionType}` : 'cf-visible',
-                  handleImageLoad
-                )}
-                {nextSrc && renderImage(nextSrc, nextImage.name,
-                  animating && transitionType !== 'none' ? `cf-in cf-${transitionType}` : 'cf-hidden',
-                  handleImageLoad
-                )}
-              </div>
+              {renderLayers()}
             </div>
           ) : (
-            <div className="crossfade-container">
-              {renderImage(currentSrc, currentImage.name,
-                animating && transitionType !== 'none' ? `cf-out cf-${transitionType}` : 'cf-visible',
-                handleImageLoad
-              )}
-              {nextSrc && renderImage(nextSrc, nextImage.name,
-                animating && transitionType !== 'none' ? `cf-in cf-${transitionType}` : 'cf-hidden',
-                handleImageLoad
-              )}
-            </div>
+            renderLayers()
           )}
         </div>
-
         {showCalendar && <Calendar />}
       </div>
 
       {showControls && (
         <div className="controls">
-          <button onClick={goToPrevious} className="nav-button prev">&#10094;</button>
-          <button onClick={goToNext} className="nav-button next">&#10095;</button>
+          <button onClick={() => advance('prev')} className="nav-button prev">&#10094;</button>
+          <button onClick={() => advance('next')} className="nav-button next">&#10095;</button>
           <div className="bottom-controls">
             <button onClick={toggleFullscreen} className="fullscreen-button">
               {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}

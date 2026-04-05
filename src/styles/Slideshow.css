@@ -19,7 +19,7 @@
   filter: blur(30px) brightness(0.5);
   transform: scale(1.1);
   z-index: 0;
-  transition: background-image 0.8s ease;
+  transition: background-image 1s ease;
 }
 
 /* ─── Main slideshow area ─────────────────────────────────────────────────── */
@@ -33,7 +33,7 @@
   z-index: 1;
 }
 
-/* ─── Crossfade container — stacks two images on top of each other ────────── */
+/* ─── Crossfade: two persistent layers stacked ────────────────────────────── */
 .crossfade-container {
   position: relative;
   display: flex;
@@ -42,86 +42,90 @@
   line-height: 0;
 }
 
-.slideshow-image {
-  display: block;
-  object-fit: contain;
+.cf-layer {
+  line-height: 0;
+  will-change: opacity, transform;
 }
 
-/* The outgoing image (current) and incoming image (next) are both
-   absolutely positioned inside the crossfade container.
-   The first image is position:relative to give the container size. */
-.crossfade-container .slideshow-image:nth-child(2) {
+/* First layer is in-flow to size the container; second is absolute on top */
+.cf-layer:nth-child(1) {
+  position: relative;
+}
+
+.cf-layer:nth-child(2) {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Default states */
-.cf-visible {
+.slideshow-image {
+  display: block;
+  object-fit: contain;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* ─── Fade transition (default) ───────────────────────────────────────────── */
+.cf-type-fade .cf-layer {
+  transition: opacity var(--transition-ms, 800ms) ease;
+}
+
+.cf-type-fade .cf-active {
   opacity: 1;
 }
 
-.cf-hidden {
+.cf-type-fade .cf-inactive {
   opacity: 0;
 }
 
-/* ─── Fade crossfade ──────────────────────────────────────────────────────── */
-.cf-out.cf-fade {
-  animation: cfFadeOut 600ms ease forwards;
+/* ─── Slide transition ────────────────────────────────────────────────────── */
+.cf-type-slide .cf-layer {
+  transition: opacity var(--transition-ms, 800ms) ease,
+              transform var(--transition-ms, 800ms) ease;
 }
 
-.cf-in.cf-fade {
-  animation: cfFadeIn 600ms ease forwards;
+.cf-type-slide .cf-active {
+  opacity: 1;
+  transform: translateX(0);
 }
 
-@keyframes cfFadeOut {
-  from { opacity: 1; }
-  to   { opacity: 0; }
+.cf-type-slide .cf-inactive {
+  opacity: 0;
+  transform: translateX(5%);
 }
 
-@keyframes cfFadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+/* ─── Zoom transition ─────────────────────────────────────────────────────── */
+.cf-type-zoom .cf-layer {
+  transition: opacity var(--transition-ms, 800ms) ease,
+              transform var(--transition-ms, 800ms) ease;
 }
 
-/* ─── Slide crossfade ─────────────────────────────────────────────────────── */
-.cf-out.cf-slide {
-  animation: cfSlideOut 600ms ease forwards;
+.cf-type-zoom .cf-active {
+  opacity: 1;
+  transform: scale(1);
 }
 
-.cf-in.cf-slide {
-  animation: cfSlideIn 600ms ease forwards;
+.cf-type-zoom .cf-inactive {
+  opacity: 0;
+  transform: scale(1.03);
 }
 
-@keyframes cfSlideOut {
-  from { transform: translateX(0); opacity: 1; }
-  to   { transform: translateX(-8%); opacity: 0; }
+/* ─── No transition ───────────────────────────────────────────────────────── */
+.cf-type-none .cf-layer {
+  transition: none;
 }
 
-@keyframes cfSlideIn {
-  from { transform: translateX(8%); opacity: 0; }
-  to   { transform: translateX(0); opacity: 1; }
+.cf-type-none .cf-active {
+  opacity: 1;
 }
 
-/* ─── Zoom crossfade ──────────────────────────────────────────────────────── */
-.cf-out.cf-zoom {
-  animation: cfZoomOut 600ms ease forwards;
-}
-
-.cf-in.cf-zoom {
-  animation: cfZoomIn 600ms ease forwards;
-}
-
-@keyframes cfZoomOut {
-  from { transform: scale(1); opacity: 1; }
-  to   { transform: scale(1.05); opacity: 0; }
-}
-
-@keyframes cfZoomIn {
-  from { transform: scale(0.95); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
+.cf-type-none .cf-inactive {
+  opacity: 0;
 }
 
 /* ─── Frame wrapper (shared) ──────────────────────────────────────────────── */
@@ -139,7 +143,7 @@
   max-height: 100vh;
 }
 
-/* ─── Framed: landscape photos fill width, portrait photos fill height ───── */
+/* ─── Framed: landscape fill width, portrait fill height ──────────────────── */
 .frame-wrapper:not(.frame-none).orient-landscape .slideshow-image {
   width: calc(100vw - 60px);
   max-width: calc(100vw - 60px);
@@ -154,7 +158,7 @@
   width: auto;
 }
 
-/* ─── Mat (the border between frame and image) ────────────────────────────── */
+/* ─── Mat ─────────────────────────────────────────────────────────────────── */
 .frame-mat {
   padding: 18px;
   display: flex;
