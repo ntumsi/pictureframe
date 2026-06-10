@@ -163,6 +163,7 @@ export const uploadImage = async (file, album = 'default') => {
         headers: {
           'Content-Type': 'multipart/form-data',
           'X-Requested-With': 'XMLHttpRequest',
+          ...pinHeaders()
         },
         withCredentials: false,
         timeout: 60000
@@ -175,6 +176,7 @@ export const uploadImage = async (file, album = 'default') => {
       const fetchResponse = await fetch(uploadUrl + `?_=${timestamp}`, {
         method: 'POST',
         body: formData,
+        headers: { ...pinHeaders() },
         credentials: 'omit',
         mode: 'cors',
       });
@@ -199,7 +201,9 @@ export const uploadImage = async (file, album = 'default') => {
 export const deleteImage = async (imageId, album) => {
   try {
     const params = album ? `?album=${album}` : '';
-    const response = await axios.delete(`${API_URL}/images/${imageId}${params}`);
+    const response = await axios.delete(`${API_URL}/images/${imageId}${params}`, {
+      headers: { ...pinHeaders() }
+    });
 
     let data = response.data;
     if (typeof data === 'string') {

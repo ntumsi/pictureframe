@@ -40,6 +40,7 @@ const Slideshow = () => {
   const background = config?.slideshow?.background || 'blur';
   const backgroundColor = config?.slideshow?.backgroundColor || '#000000';
   const frameStyle = config?.slideshow?.frame || 'none';
+  const frameInset = config?.slideshow?.frameInset ?? 30;
   const showMat = config?.slideshow?.mat || false;
   const matColor = config?.slideshow?.matColor || '#ffffff';
   const transitionMs = transitionType === 'none' ? 0 : 800;
@@ -205,6 +206,7 @@ const Slideshow = () => {
   const frameClass = hasFrame ? `frame-${frameStyle}` : 'frame-none';
   const orientClass = `orient-${orientation}`;
   const activeSrc = layers[activeLayer];
+  const frameStyleVars = hasFrame ? { '--frame-inset': `${frameInset}px` } : undefined;
 
   // Transition CSS custom property
   const transitionVar = { '--transition-ms': `${transitionMs}ms` };
@@ -240,7 +242,7 @@ const Slideshow = () => {
       )}
 
       <div className="slideshow">
-        <div className={`frame-wrapper ${frameClass} ${orientClass}`}>
+        <div className={`frame-wrapper ${frameClass} ${orientClass}`} style={frameStyleVars}>
           {showMat && hasFrame ? (
             <div className="frame-mat" style={{ backgroundColor: matColor }}>
               {renderLayers()}

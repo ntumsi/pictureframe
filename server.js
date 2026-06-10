@@ -8,7 +8,9 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const UPLOADS_FOLDER = path.join(__dirname, 'public', 'uploads');
-const CONFIG_FILE = path.join(__dirname, 'public', 'config.json');
+const CONFIG_DIR = path.join(__dirname, 'data');
+const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
+const LEGACY_CONFIG_FILE = path.join(__dirname, 'public', 'config.json');
 
 // ─── Default configuration ───────────────────────────────────────────────────
 const DEFAULT_CONFIG = {
@@ -21,6 +23,7 @@ const DEFAULT_CONFIG = {
     background: 'blur',
     backgroundColor: '#000000',
     frame: 'classic-wood',
+    frameInset: 30,
     mat: true,
     matColor: '#ffffff'
   },
@@ -70,6 +73,17 @@ if (!fs.existsSync(CONFIG_FILE)) {
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true, mode: 0o755 });
+  }
+}
+
+ensureDir(CONFIG_DIR);
+
+if (!fs.existsSync(CONFIG_FILE) && fs.existsSync(LEGACY_CONFIG_FILE)) {
+  try {
+    fs.renameSync(LEGACY_CONFIG_FILE, CONFIG_FILE);
+    console.log('Migrated config.json out of public/ into data/.');
+  } catch (err) {
+    console.error('Error migrating legacy config:', err.message);
   }
 }
 
@@ -180,6 +194,10 @@ function requirePin(req, res, next) {
 }
 
 // ─── Static file serving ─────────────────────────────────────────────────────
+app.get('/config.json', (req, res) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads'), {
   maxAge: '1d',
   etag: true,
@@ -428,7 +446,7 @@ app.get('/api/images', (req, res) => {
 });
 
 // Upload image (with album support)
-app.post('/api/upload', (req, res) => {
+app.post('/api/upload', requirePin, (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With, X-Pin');
@@ -492,7 +510,7 @@ app.post('/api/upload', (req, res) => {
 });
 
 // Delete image (searches across albums)
-app.delete('/api/images/:id', (req, res) => {
+app.delete('/api/images/:id', requirePin, (req, res) => {
   try {
     const album = req.query.album;
     let found = false;

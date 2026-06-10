@@ -3,12 +3,18 @@
 echo "Picture Frame Update Script"
 echo "This script will update the codebase from git without overwriting your uploads"
 
+CONFIG_FILE="./data/config.json"
+LEGACY_CONFIG_FILE="./public/config.json"
+
 # Step 1: Make a backup of the uploads folder and config
 echo "Step 1: Backing up uploads folder and config..."
 mkdir -p /tmp/pictureframe_backup
 cp -r ./public/uploads /tmp/pictureframe_backup/
-if [ -f ./public/config.json ]; then
-  cp ./public/config.json /tmp/pictureframe_backup/config.json
+if [ -f "$CONFIG_FILE" ]; then
+  cp "$CONFIG_FILE" /tmp/pictureframe_backup/config.json
+  echo "Config backed up"
+elif [ -f "$LEGACY_CONFIG_FILE" ]; then
+  cp "$LEGACY_CONFIG_FILE" /tmp/pictureframe_backup/config.json
   echo "Config backed up"
 fi
 echo "Backup created at /tmp/pictureframe_backup/"
@@ -52,7 +58,8 @@ echo "Step 8: Restoring uploads folder and config from backup..."
 rm -rf ./public/uploads
 cp -r /tmp/pictureframe_backup/uploads ./public/
 if [ -f /tmp/pictureframe_backup/config.json ]; then
-  cp /tmp/pictureframe_backup/config.json ./public/config.json
+  mkdir -p ./data
+  cp /tmp/pictureframe_backup/config.json "$CONFIG_FILE"
   echo "Config restored"
 fi
 echo "Uploads folder restored"

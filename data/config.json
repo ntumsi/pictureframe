@@ -1,0 +1,21 @@
+{
+  "pin": "",
+  "slideshow": {
+    "interval": 6,
+    "transition": "fade",
+    "shuffle": false,
+    "showCalendar": true,
+    "background": "white",
+    "backgroundColor": "#f5f5f5",
+    "frame": "ornate-gold",
+    "mat": true,
+    "matColor": "#d4c5a9",
+    "frameInset": 21
+  },
+  "albums": {
+    "default": {
+      "name": "All Photos"
+    }
+  },
+  "activeAlbum": "default"
+}

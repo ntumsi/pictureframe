@@ -152,6 +152,7 @@ const Settings = () => {
   }
 
   const currentFrame = config?.slideshow?.frame || 'none';
+  const currentFrameInset = config?.slideshow?.frameInset ?? 30;
   const currentBg = config?.slideshow?.background || 'blur';
   const currentMat = config?.slideshow?.mat || false;
   const currentMatColor = config?.slideshow?.matColor || '#ffffff';
@@ -194,6 +195,24 @@ const Settings = () => {
             ))}
           </div>
         </div>
+
+        {currentFrame !== 'none' && (
+          <div className="setting-group">
+            <label className="setting-group-label">Frame Position</label>
+            <p className="setting-hint">Adjust how tightly the frame sits against the screen edges.</p>
+            <div className="setting-row">
+              <label>Edge Margin</label>
+              <input
+                type="range"
+                min="0"
+                max="80"
+                value={currentFrameInset}
+                onChange={(e) => handleSlideshowChange('frameInset', parseInt(e.target.value, 10))}
+              />
+              <span className="setting-value">{currentFrameInset}px</span>
+            </div>
+          </div>
+        )}
 
         {currentFrame !== 'none' && (
           <div className="setting-group">
